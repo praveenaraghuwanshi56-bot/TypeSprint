@@ -48,7 +48,7 @@ There are **no hash-path routes with slashes**; routes are plain hashes and the 
 1 Database helpers (`rpc`, `saveResult`) - 2 small helpers (`$`, `$$`, `esc`, `shuffle`, `pick`, `RUN`/`lg` event log) - 3 word pool (built-in + Datamuse) -
 4 appearance (light/dark/system, colour themes) - 5 text library and the Reading nook list - 6 router - 7 typing practice (+ Wikipedia source) -
 8 games - 9 Reading nook open/close - 10 accounts and account menu - 11 leaderboard - 12 run logs, AI reports, history, AI shortcuts -
-13 Learn (lessons, tips, rhythm trainer) - 14 results card `showResults()` - 15 keyboard shortcut - 16 admin upload - 17 start-up.
+13 Learn (Beginners/Advanced courses, lessons, tips, rhythm trainer) - 14 results card `showResults()` - 15 keyboard shortcut - 16 admin upload - 17 start-up.
 Every top-level function and variable has a one-line comment above it.
 
 ### The pattern every mode follows
@@ -113,7 +113,7 @@ All games ease in gently (about 3 minutes to full pace) and cap at a fair maximu
 * The results card also shows one personalised tip (e.g. low accuracy -> "Accuracy comes first").
 
 ### Learn (`#learn`)
-* **5 interactive lessons**: home row, G/H reaches, top row, bottom row, everything together. Each shows an on-screen QWERTY keyboard coloured by finger (with the bumps on F and J) and two animated hands. "Watch the demo" lights each key, raises the right finger and taps it with captions; "Start practice" runs single keys, 3-letter chunks and real words; wrong keys shake the prompt; **85% accuracy completes a lesson**; progress is saved (`ts-lessons`) with attempts and best accuracy.
+* **Two courses, 10 interactive lessons**: the **Beginners** course (home row, G/H reaches, top row, bottom row, everything together) and an **Advanced** course (number row, punctuation, tricky words, flow sentences, speed & stamina). The Learn page has a tab per course. Advanced unlocks once every Beginners lesson is completed with 85% accuracy or better; the **admin account can open any course regardless of progress**. Each lesson shows an on-screen QWERTY keyboard coloured by finger (with the bumps on F and J), a number row, and two animated hands. "Watch the demo" lights each key, raises the right finger and taps it with captions; "Start practice" runs single keys, 3-letter chunks and real words; wrong keys shake the prompt; a progress bar tracks the lesson and a confetti burst celebrates a pass; **85% accuracy completes a lesson**; progress is saved (`ts-lessons`) with attempts and best accuracy. Finishing the last Beginners lesson offers a shortcut straight into Advanced.
 * **Tips**: 10 animated cards + tip of the day. **Rhythm trainer**: pulsing circle at 60/80/100/120 BPM; tap Space on the beat; 16 taps then average offset from the beat.
 
 ### Admin upload (`#upload`, admin only)
@@ -140,7 +140,7 @@ Paste text or choose a `.txt`; format per text: header lines `title:`, `difficul
 * **Change the default colour theme**: head script `p||'sunset'` and `root.dataset.palette || "sunset"` in `renderThemeMenu`, and the order of the `PALETTES` array.
 * **Add a colour theme**: add a light rule `:root[data-palette="id"]{...}` and a dark rule `:root[data-palette="id"][data-theme="dark"]{...}` at the end of `<style>` with the same 20 variables (copy an existing pair), and an entry in `PALETTES`. Check contrast (text/background >= 7, accent text >= 4.5).
 * **Add an AI shortcut**: add an entry to `AIS`.
-* **Add a lesson**: add an object to `LESSONS` (`keys`, `focus`, `tip`, `words`); the Learn page, My runs and reports pick it up.
+* **Add a lesson**: add an object to `LESSONS` with a `course` (`"beginners"` or `"advanced"`), `keys`, `focus`, `tip` and `words`; the Learn tabs, My runs and reports pick it up. Add a new course by adding an entry to `COURSES` (with `requires` naming its prerequisite, or `null`) and giving its lessons that course id.
 * **Tune difficulty**: Balloons `PACE` and the length formula in `spawn` calls; Blink `nextWord`; Cafe `makeOrder`, `seatCustomer`, `tickCafe`; Gap `gapNext`; the 180000 ms (3 minutes) ramp lengths.
 * **Add a game**: new `<section id="view-x">`, a card in `view-games`, add to `GAMES`/`ROUTES`/the `view` map in `route()`, state + start/stop/end functions, `lg()` events, `showResults()` at the end, a section in `gameSections()`, a leaderboard entry in `BOARDS`, the mode in the SQL check, and add it to `restart()` and the stop calls in `route()`.
 * **Add leaderboard boards**: `BOARDS` (mode, optional variant, metric `wpm|score|best_streak`).
@@ -159,7 +159,7 @@ Paste text or choose a `.txt`; format per text: header lines `title:`, `difficul
 * Scores are computed in the browser, so a determined cheater can post fake scores (the database only rejects impossible values such as WPM > 400). Sign-ups are open (no rate limit); no email, so no password recovery.
 * History, lessons, streaks and theme are per browser/address. Lessons assume a QWERTY keyboard. The Wordle answer list is small (338 words).
 * Unused leftovers (safe to delete): `playerId`, `wordsUpTo`, CSS for `.pick`, `select` and `#pin-input`. `my-tests.txt` is only a sample of the upload format.
-* Ideas not built: daily Wordle, syncing history/lessons to Supabase, sound effects, more languages/keyboard layouts, more lessons (numbers, punctuation), password reset by email, leaderboards by week.
+* Ideas not built: daily Wordle, syncing history/lessons to Supabase, sound effects, more languages/keyboard layouts, more lessons (shifted symbols, capitals), password reset by email, leaderboards by week.
 
 ## 9. Project history (what was built, in order)
 1. **Prototype**: static site with a typing test, Balloons, results card, light/dark toggle, Supabase config + results table, Netlify deploy steps.
@@ -170,5 +170,6 @@ Paste text or choose a `.txt`; format per text: header lines `title:`, `difficul
 6. **Accounts**: custom sign-up/sign-in, guest mode, one device at a time, leaderboard, admin-only upload, left slide-in sidebar.
 7. **Polish**: account menu (rename/icon/delete), styled dropdowns, sidebar icon, hosting moved from Netlify to Cloudflare Pages.
 8. **Learning and evaluation**: run logs and AI reports, My runs, Learn tab (lessons, tips, rhythm trainer).
-9. **Themes**: eight colour themes, Sunset made the default, floating My runs button, lesson progress on My runs, AI shortcut buttons.
-10. **Documentation**: code comments throughout `index.html` and `supabase-setup.sql`, this README, and the dev-tools test bundle.
+9. **Courses**: the Learn tab grew Beginners and Advanced course tabs, five new advanced lessons (number row, punctuation, tricky words, flow, speed), a lock/progress panel for Advanced, admin access to every course, and extra lesson animations (progress bar, confetti, staggered cards, key-press feedback).
+10. **Themes**: eight colour themes, Sunset made the default, floating My runs button, lesson progress on My runs, AI shortcut buttons.
+11. **Documentation**: code comments throughout `index.html` and `supabase-setup.sql`, this README, and the dev-tools test bundle.

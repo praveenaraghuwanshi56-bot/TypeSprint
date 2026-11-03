@@ -342,6 +342,26 @@ summary{cursor:pointer;font-weight:600}
 .lesson-card .check{margin-top:.4rem;color:var(--accent);font-size:.85rem;font-weight:700}
 .lesson-card.done .ln{background:var(--ok);color:var(--bg)}
 .lesson-card.done .check{color:var(--ok)}
+.lesson-card{animation:tipin .35s ease both;animation-delay:calc(var(--i,0) * 45ms)}
+.course-tabs{display:flex;flex-wrap:wrap;gap:.6rem;margin:0 0 .9rem}
+.course-tab{display:flex;align-items:center;gap:.7rem;min-width:12rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+.course-tab:hover{border-color:var(--accent);transform:translateY(-2px)}
+.course-tab[aria-selected="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.course-tab .ct-icon{font-size:1.5rem;line-height:1}
+.course-tab .ct-body{min-width:0}
+.course-tab strong{display:block;font-size:.98rem}
+.course-tab small{display:block;color:var(--muted);font-size:.78rem;font-weight:400}
+.course-tab .ct-badge{margin-left:auto;padding:.2rem .45rem;border-radius:99px;background:var(--b2);color:var(--ink);font-size:.68rem;font-weight:700;white-space:nowrap}
+.course-tab .ct-badge.lock{background:var(--line);color:var(--muted)}
+.course-tab .ct-badge.done{background:var(--ok);color:var(--bg)}
+.course-tab .ct-badge.admin{background:var(--accent);color:var(--on-accent)}
+.course-note{margin:0 0 .9rem;color:var(--muted);font-size:.85rem}
+.course-lock{display:grid;justify-items:center;gap:.55rem;text-align:center;padding:2rem 1rem;border:1px dashed var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
+.course-lock .lock-icon{font-size:2rem}
+.course-lock h3{margin:0;font-size:1.15rem}
+.course-lock p{margin:0;max-width:36rem;color:var(--muted);font-size:.92rem}
+.course-lock .prog-bar{width:min(24rem,100%);margin:.3rem 0}
+.lesson-course{margin:.2rem 0 0;color:var(--accent);font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .tip-card{padding:1.1rem 1.2rem;border:1px solid var(--line);border-radius:18px;background:var(--surface);animation:tipin .5s ease both;animation-delay:calc(var(--i) * 60ms)}
 .tip-card.hl{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
 .tip-card .ti{font-size:1.6rem}
@@ -357,13 +377,20 @@ summary{cursor:pointer;font-weight:600}
 .rh-bar::before{content:"";position:absolute;left:50%;top:.3rem;bottom:.3rem;width:2px;background:var(--muted);opacity:.5}
 #rh-marks i{position:absolute;top:50%;width:.7rem;height:.7rem;margin:-.35rem 0 0 -.35rem;border-radius:50%;background:var(--accent);opacity:.85}
 .rh-lbl{display:flex;justify-content:space-between;margin:.3rem .5rem .8rem;color:var(--muted);font-size:.75rem}
-.lesson-stage{display:grid;justify-items:center;gap:1.1rem;padding:1.5rem 1rem;overflow:hidden;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
+.lesson-stage{position:relative;display:grid;justify-items:center;gap:1.1rem;padding:1.5rem 1rem;overflow:hidden;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
 .ls-prompt{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;justify-content:center;min-height:4rem}
 .ls-prompt.shake{animation:wshake .35s}
 .ls-ch{display:grid;place-items:center;width:3rem;height:3.6rem;border:2px solid var(--line);border-radius:12px;font:600 1.8rem var(--font-mono);text-transform:uppercase;transition:all .15s}
 .ls-ch.cur{border-color:var(--accent);box-shadow:0 0 0 4px var(--glow);transform:translateY(-2px)}
 .ls-ch.ok{border-color:var(--ok);background:var(--ok);color:var(--bg)}
+.ls-ch.sp{font-size:0}
+.ls-ch.sp::after{content:"␣";font-size:1.2rem;opacity:.45}
 .ls-caption{min-height:1.5rem;color:var(--muted);font-weight:600;text-align:center}
+.ls-progress{width:min(28rem,100%);height:.45rem;overflow:hidden;border-radius:99px;background:var(--line)}
+.ls-progress i{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--b2),var(--ok));transition:width .25s ease}
+.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.confetti i{position:absolute;top:-12px;width:.5rem;height:.9rem;border-radius:2px;opacity:.9;animation:conffall 1.4s ease-in forwards}
+@keyframes conffall{to{transform:translateY(24rem) rotate(540deg);opacity:0}}
 .hands{display:flex;justify-content:center;gap:clamp(1.5rem,8vw,5rem)}
 .hand{position:relative;display:flex;align-items:flex-end;gap:.35rem;padding-bottom:1.5rem}
 .hand::after{content:"";position:absolute;left:-.3rem;right:-.3rem;bottom:0;height:1.8rem;border-radius:.4rem .4rem 45% 45%;background:var(--line)}
@@ -384,12 +411,14 @@ summary{cursor:pointer;font-weight:600}
 .krow{display:flex;gap:.35rem}
 .krow.r1{margin-left:calc(var(--kw) * .35)}
 .krow.r2{margin-left:calc(var(--kw) * .8)}
+.krow.r3{margin-left:calc(var(--kw) * 1.25)}
 .key{position:relative;width:var(--kw);height:var(--kw);padding:0;border:1px solid var(--line);border-radius:9px;background:var(--zone,var(--bg));color:var(--text);font:600 .95rem var(--font-mono);text-transform:uppercase;opacity:.4;cursor:pointer;transition:opacity .2s,background .15s,transform .15s}
 .key.in{opacity:1}
 .key.space{width:calc(var(--kw) * 6)}
 .key.hot{outline:3px solid var(--accent);outline-offset:1px;animation:hotpulse 1s ease infinite}
-.key.ok{background:var(--ok);color:var(--bg)}
+.key.ok{background:var(--ok);color:var(--bg);animation:keyok .25s ease}
 .key.bad{background:var(--err);color:#fff}
+@keyframes keyok{50%{transform:translateY(2px) scale(.95)}}
 .key.bump::after{content:"";position:absolute;left:35%;right:35%;bottom:.3rem;height:2px;border-radius:2px;background:currentColor}
 @keyframes hotpulse{50%{transform:translateY(-2px)}}
 .z-pinky{--zone:color-mix(in srgb,var(--b3) 40%,var(--surface))}
@@ -734,7 +763,16 @@ summary{cursor:pointer;font-weight:600}
   <section id="view-learn" hidden>
     <h1 class="home-title">Learn to touch type</h1>
     <p class="home-sub" id="tip-day"></p>
-    <h2 class="sect">Interactive lessons</h2>
+    <h2 class="sect">Courses</h2>
+    <div class="course-tabs" id="course-tabs" role="tablist" aria-label="Typing courses"></div>
+    <p class="course-note" id="course-note" hidden></p>
+    <div class="course-lock" id="course-lock" hidden>
+      <div class="lock-icon" aria-hidden="true">🔒</div>
+      <h3 id="course-lock-title">Course locked</h3>
+      <p id="course-lock-text"></p>
+      <div class="prog-bar"><i id="course-lock-bar"></i></div>
+      <button id="course-lock-go" class="btn primary" data-course="beginners">Go to Beginners</button>
+    </div>
     <div class="lesson-grid" id="lesson-grid"></div>
     <h2 class="sect">Rhythm trainer</h2>
     <div class="panel rhythm">
@@ -758,6 +796,7 @@ summary{cursor:pointer;font-weight:600}
   <!-- One lesson: animated hands, on-screen keyboard, practice prompt. -->
   <section id="view-lesson" hidden>
     <a class="back" href="#learn">← All lessons</a>
+    <p class="lesson-course" id="ls-course"></p>
     <h1 class="home-title" id="ls-title" style="max-width:none"></h1>
     <p class="home-sub" id="ls-intro"></p>
     <dl class="stats">
@@ -769,6 +808,7 @@ summary{cursor:pointer;font-weight:600}
     <div class="lesson-stage">
       <div class="ls-prompt" id="ls-prompt" aria-live="polite"></div>
       <div class="ls-caption" id="ls-caption"></div>
+      <div class="ls-progress" aria-hidden="true"><i id="ls-progress"></i></div>
       <div class="hands" id="hands" aria-hidden="true"></div>
       <div class="kbd" id="kbd" aria-label="On-screen keyboard"></div>
     </div>
@@ -856,7 +896,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     10  Accounts              sign in/up, guest, one device per account, account menu (rename, icon, delete)
     11  Leaderboard           styled dropdown + ranking list
     12  Run logs and reports  keystroke analysis, AI reports, My runs history, AI shortcuts
-    13  Learn                 lessons (animated hands + keyboard), tips, rhythm trainer
+    13  Learn                 courses (Beginners/Advanced), lessons (animated hands + keyboard), tips, rhythm trainer
     14  Results card          showResults() - every mode ends here
     15  Keyboard shortcuts    Tab then Enter restarts
     16  Admin upload page     paste/upload texts (admin only)
@@ -2372,9 +2412,12 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     setText($("#lp-count"), `${done} of ${LESSONS.length} lessons completed`);
     $("#lp-bar").style.width = Math.round((done / LESSONS.length) * 100) + "%";
     $("#lp-list").innerHTML = LESSONS.map((L, i) => {
-      const e = st[L.id], ok = e && e.done;
+      const e = st[L.id], ok = e && e.done, course = courseOf(L), open = courseUnlocked(course);
       const status = !e ? "Not started" : `${ok ? "Completed" : "In progress"}, best ${e.best}%${ok && e.secs != null ? ", " + e.secs + " s" : ""}, ${plural(e.attempts)}`;
-      return `<li><span class="ln${ok ? " tick" : ""}">${ok ? "✓" : i + 1}</span><div><strong>${esc(L.title)}</strong><div class="muted small">${esc(status)}${e && e.at ? ", " + esc(new Date(e.at).toLocaleDateString()) : ""}</div></div><button class="btn small" data-open="${L.id}">${!e ? "Start" : ok ? "Practise" : "Continue"}</button></li>`;
+      const action = open
+        ? `<button class="btn small" data-open="${L.id}">${!e ? "Start" : ok ? "Practise" : "Continue"}</button>`
+        : `<button class="btn small" disabled title="Finish the ${esc(course.requires)} course first">🔒 Locked</button>`;
+      return `<li><span class="ln${ok ? " tick" : ""}">${ok ? "✓" : i + 1}</span><div><strong>${esc(L.title)}</strong><div class="muted small">${esc(course.title)} course · ${esc(status)}${e && e.at ? ", " + esc(new Date(e.at).toLocaleDateString()) : ""}</div></div>${action}</li>`;
     }).join("");
   }
   $("#lp-list").addEventListener("click", (e) => { const b = e.target.closest("[data-open]"); if (b) { lessonId = b.dataset.open; location.hash = "#lesson"; } });
@@ -2398,16 +2441,41 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   /* ---------- Learn: lessons ---------- */
   // All keys used by the later lessons.
   const LETTERS = "abcdefghijklmnopqrstuvwxyz;,.";
-  // Lesson definitions: keys available, the new keys to focus on, a tip and a word list.
-  const LESSONS = [
-    { id: "home", title: "The home row", blurb: "Where your fingers live: A S D F and J K L ;", keys: "asdfjkl;", focus: "asdfjkl;", tip: "Feel the little bumps on F and J. Your index fingers rest there, so you can find home without looking.", words: ["ask", "sad", "dad", "lad", "fad", "all", "add", "fall", "lass", "alas", "flask", "salad", "asks", "adds"] },
-    { id: "reach", title: "Index reaches: G and H", blurb: "Stretch your index fingers sideways, then come home", keys: "asdfjkl;gh", focus: "gh", tip: "Your index fingers stretch sideways to G and H, then go straight back to F and J.", words: ["had", "has", "gas", "dash", "hall", "flash", "shall", "glass", "half", "gash", "hash", "slash", "lag", "sag"] },
-    { id: "top", title: "The top row", blurb: "Reach up for Q W E R T Y U I O P", keys: "asdfghjkl;qwertyuiop", focus: "qwertyuiop", tip: "Each finger travels straight up its own column and returns home right after.", words: ["tree", "pure", "write", "power", "quiet", "your", "type", "wire", "outer", "pretty", "upper", "topple", "equip", "tiger", "pool", "quote"] },
-    { id: "bottom", title: "The bottom row", blurb: "Curl down for Z X C V B N M , .", keys: LETTERS, focus: "zxcvbnm,.", tip: "Curl your fingers down and back. Keep your wrists steady instead of jumping your hands around.", words: ["zinc", "maze", "vibe", "next", "calm", "box", "bank", "vex", "cave", "numb", "mix", "bonus", "zone", "combo", "bravo", "crazy", "exam", "cabin"] },
-    { id: "mix", title: "Everything together", blurb: "Common words using all the keys", keys: LETTERS, focus: "abcdefghijklmnopqrstuvwxyz", tip: "Go steady. Even rhythm matters more than speed right now.", words: ["the", "quick", "brown", "jumps", "over", "lazy", "dog", "typing", "practice", "steady", "rhythm", "finger", "keyboard", "accuracy", "smooth", "simple", "morning", "coffee", "garden", "window"] }
+  // Course groups shown as tabs on the Learn page. `requires` names the course that must be finished first.
+  const COURSES = [
+    { id: "beginners", title: "Beginners", icon: "🌱", tagline: "Home row to every key", requires: null },
+    { id: "advanced", title: "Advanced", icon: "🚀", tagline: "Numbers, punctuation & flow", requires: "beginners" }
   ];
+  // Lesson definitions: course, keys available, the new keys to focus on, a tip and a word list.
+  const LESSONS = [
+    { id: "home", course: "beginners", title: "The home row", blurb: "Where your fingers live: A S D F and J K L ;", keys: "asdfjkl;", focus: "asdfjkl;", tip: "Feel the little bumps on F and J. Your index fingers rest there, so you can find home without looking.", words: ["ask", "sad", "dad", "lad", "fad", "all", "add", "fall", "lass", "alas", "flask", "salad", "asks", "adds"] },
+    { id: "reach", course: "beginners", title: "Index reaches: G and H", blurb: "Stretch your index fingers sideways, then come home", keys: "asdfjkl;gh", focus: "gh", tip: "Your index fingers stretch sideways to G and H, then go straight back to F and J.", words: ["had", "has", "gas", "dash", "hall", "flash", "shall", "glass", "half", "gash", "hash", "slash", "lag", "sag"] },
+    { id: "top", course: "beginners", title: "The top row", blurb: "Reach up for Q W E R T Y U I O P", keys: "asdfghjkl;qwertyuiop", focus: "qwertyuiop", tip: "Each finger travels straight up its own column and returns home right after.", words: ["tree", "pure", "write", "power", "quiet", "your", "type", "wire", "outer", "pretty", "upper", "topple", "equip", "tiger", "pool", "quote"] },
+    { id: "bottom", course: "beginners", title: "The bottom row", blurb: "Curl down for Z X C V B N M , .", keys: LETTERS, focus: "zxcvbnm,.", tip: "Curl your fingers down and back. Keep your wrists steady instead of jumping your hands around.", words: ["zinc", "maze", "vibe", "next", "calm", "box", "bank", "vex", "cave", "numb", "mix", "bonus", "zone", "combo", "bravo", "crazy", "exam", "cabin"] },
+    { id: "mix", course: "beginners", title: "Everything together", blurb: "Common words using all the keys", keys: LETTERS, focus: "abcdefghijklmnopqrstuvwxyz", tip: "Go steady. Even rhythm matters more than speed right now.", words: ["the", "quick", "brown", "jumps", "over", "lazy", "dog", "typing", "practice", "steady", "rhythm", "finger", "keyboard", "accuracy", "smooth", "simple", "morning", "coffee", "garden", "window"] },
+    { id: "numbers", course: "advanced", title: "The number row", blurb: "Reach up for 1 – 0, then snap back home", keys: "1234567890", focus: "1234567890", tip: "Each number sits above a home-row finger: 1 with the left pinky, 0 with the right pinky. Reach up, press, and return home straight away.", words: ["42", "7", "2026", "365", "100", "8", "12", "99", "2024", "5", "10", "360"] },
+    { id: "punct", course: "advanced", title: "Punctuation patrol", blurb: "Commas, full stops, semicolons and slashes", keys: LETTERS + "/ ", focus: ",.;/", tip: "Punctuation is typed with the same fingers as the letters around it. Keep your wrists still and let the punctuation keys come to you.", words: ["warm, cozy; calm.", "ready, set; go.", "one, two; three.", "slow, steady; smooth.", "a comma, a period; a slash.", "tea and toast, please."] },
+    { id: "tricky", course: "advanced", title: "Tricky words", blurb: "The words that trip everyone up", keys: LETTERS + "/ ", focus: "abcdefghijklmnopqrstuvwxyz", tip: "Slow down on the awkward joins. Say the word in your head and let your fingers follow the shape of it.", words: ["necessary", "separate", "definitely", "occurrence", "embarrass", "accommodate", "committee", "rhythm", "strength", "conscience", "privilege", "maintenance"] },
+    { id: "flow", course: "advanced", title: "Flow sentences", blurb: "Whole sentences with rhythm and punctuation", keys: LETTERS + "/ ", focus: "abcdefghijklmnopqrstuvwxyz", tip: "Read a little ahead of your fingers. Keep the rhythm even and let the sentence carry you forward.", words: ["the quick brown fox jumps over the lazy dog", "pack my box with five dozen liquor jugs", "how vexingly quick daft zebras jump", "bright vixens jump; dozy fowl quack.", "steady hands make smooth work."] },
+    { id: "speed", course: "advanced", title: "Speed & stamina", blurb: "Longer words to build smooth, lasting speed", keys: LETTERS + "/ ", focus: "abcdefghijklmnopqrstuvwxyz", tip: "Speed is a side effect of accuracy and relaxation. Keep your shoulders loose and your keystrokes light.", words: ["keyboard", "practice", "rhythm", "accuracy", "morning", "coffee", "garden", "window", "journey", "mountain", "treasure", "umbrella", "festival", "harmony", "whisper", "glimmer", "cascade", "meadow", "breeze", "sunlight"] }
+  ];
+  // Each course knows its lessons (in course order).
+  COURSES.forEach((c) => { c.lessons = LESSONS.filter((L) => L.course === c.id); });
+  // The course a lesson belongs to.
+  const courseOf = (L) => COURSES.find((c) => c.id === L.course) || COURSES[0];
+  // True when every lesson in a course has been completed.
+  const courseDone = (course) => course.lessons.every((L) => { const e = lessonState()[L.id]; return e && e.done; });
+  // A course is open when it has no prerequisite, when the player is an admin, or when the previous course is complete.
+  function courseUnlocked(course) {
+    if (!course.requires) return true;
+    if (auth && auth.is_admin) return true;
+    const req = COURSES.find((c) => c.id === course.requires);
+    return !!req && courseDone(req);
+  }
   // Lesson currently opened.
   let lessonId = LESSONS[0].id;
+  // Which course tab is open on the Learn page.
+  let learnTab = "beginners";
   // Raw lesson progress from localStorage (ts-lessons).
   const lessonDone = () => { try { return JSON.parse(localStorage.getItem("ts-lessons") || "{}"); } catch { return {}; } };
   // Lesson progress normalised to { done, best, last, secs, attempts, at } (also reads the older save
@@ -2426,7 +2494,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   // On-screen keyboard element of the lesson page.
   const kbdEl = $("#kbd"), handsEl = $("#hands"), KEYEL = {}, FING = {};
   (function buildLessonUI() {
-    const rows = ["qwertyuiop", "asdfghjkl;", "zxcvbnm,./"];
+    const rows = ["1234567890", "qwertyuiop", "asdfghjkl;", "zxcvbnm,./"];
     kbdEl.innerHTML = rows.map((r, i) => `<div class="krow r${i}">${[...r].map((c) => `<button class="key z-${fingerOf(c).split("-")[1]}${"fj".includes(c) ? " bump" : ""}" data-k="${c}" tabindex="-1" aria-label="${c}">${c}</button>`).join("")}</div>`).join("")
       + `<div class="krow rs"><button class="key space z-thumb" data-k=" " tabindex="-1" aria-label="Space"></button></div>`;
     kbdEl.querySelectorAll(".key").forEach((k) => { KEYEL[k.dataset.k] = k; });
@@ -2447,32 +2515,43 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     if (k) { k.classList.add(good ? "ok" : "bad"); setTimeout(() => k.classList.remove("ok", "bad"), 220); }
     if (good && f) { f.classList.remove("tap"); void f.offsetWidth; f.classList.add("tap"); }
   }
-  // Updates lesson stats.
+  // Updates lesson stats and the progress bar.
   function lsStats() {
     const tot = LS.hits + LS.errors;
     setText($("#ls-step"), LS.steps.length ? `${Math.min(LS.i + 1, LS.steps.length)}/${LS.steps.length}` : "0/0");
     setText($("#ls-acc"), (tot ? Math.round((LS.hits / tot) * 100) : 100) + "%"); setText($("#ls-err"), LS.errors);
     setText($("#ls-time"), fmtTime(LS.running ? (performance.now() - LS.start) / 1000 : 0));
+    const s = LS.steps[LS.i];
+    const frac = !LS.steps.length ? 0 : LS.i >= LS.steps.length ? 1 : (LS.i + LS.j / s.t.length) / LS.steps.length;
+    $("#ls-progress").style.width = Math.round(frac * 100) + "%";
   }
   // Stops timers and the demo.
   function stopLesson() { LS.running = false; LS.lock = false; clearInterval(LS.timer); clearInterval(LS.demo); }
   // Prepares the lesson page for the chosen lesson (hands settle onto the home row).
   function openLesson() {
     stopLesson(); const L = (LS.L = LESSONS.find((l) => l.id === lessonId) || LESSONS[0]);
+    const course = courseOf(L);
+    if (!courseUnlocked(course)) { learnTab = course.id; location.hash = "#learn"; return; }
+    learnTab = course.id;
+    const idx = course.lessons.findIndex((l) => l.id === L.id);
+    $("#ls-course").textContent = `${course.title} course · Lesson ${idx + 1} of ${course.lessons.length}`;
     $("#ls-title").textContent = L.title; $("#ls-intro").textContent = L.tip;
     Object.entries(KEYEL).forEach(([c, k]) => k.classList.toggle("in", L.keys.includes(c) || c === " "));
     handsEl.classList.remove("settle"); void handsEl.offsetWidth; handsEl.classList.add("settle");   // fingers glide onto the home row
     lsClear(); $("#ls-prompt").innerHTML = ""; Object.assign(LS, { steps: [], i: 0, j: 0, hits: 0, errors: 0 }); lsStats();
-    $("#ls-caption").textContent = "Watch the demo, then start practice."; $("#ls-start").textContent = "Start practice"; $("#ls-next").hidden = true;
+    $("#ls-caption").textContent = "Watch the demo, then start practice."; $("#ls-start").textContent = "Start practice";
+    const nb = $("#ls-next"); nb.hidden = true; nb.dataset.to = ""; nb.dataset.course = "";
   }
   // Animated demo: lights each key, raises the finger and taps it, with captions.
   function playDemo() {
     stopLesson(); const seq = [...LS.L.focus].slice(0, 12); let n = 0; $("#ls-prompt").innerHTML = "";
     const step = () => {
       if (n >= seq.length) { clearInterval(LS.demo); lsClear(); $("#ls-caption").textContent = "Your turn. Press Start practice."; return; }
-      const ch = seq[n++]; lsAim(ch); lsFx(ch, true); $("#ls-caption").textContent = `${fingerName(fingerOf(ch))} presses ${ch.toUpperCase()}`;
+      const ch = seq[n++]; lsAim(ch); lsFx(ch, true);
+      const shown = ch === " " ? "space" : ch.toUpperCase();
+      $("#ls-caption").textContent = `${n} / ${seq.length} · ${fingerName(fingerOf(ch))} presses ${shown}`;
     };
-    step(); LS.demo = setInterval(step, 900);
+    step(); LS.demo = setInterval(step, 850);
   }
   // Builds the practice steps (single keys, 3-letter chunks, real words) and starts.
   function startPractice() {
@@ -2486,7 +2565,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   // Shows the current step's text and aims at its first key.
   function renderStep() {
     const s = LS.steps[LS.i];
-    $("#ls-prompt").innerHTML = [...s.t].map((c, k) => `<span class="ls-ch${k === 0 ? " cur" : ""}">${esc(c)}</span>`).join("");
+    $("#ls-prompt").innerHTML = [...s.t].map((c, k) => `<span class="ls-ch${k === 0 ? " cur" : ""}${c === " " ? " sp" : ""}">${esc(c)}</span>`).join("");
     $("#ls-caption").textContent = s.ph; lsAim(s.t[0]); lsStats();
   }
   // Handles a key press during practice (counts mistakes, advances, finishes).
@@ -2505,30 +2584,89 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     LS.lock = true; lsStats();
     setTimeout(() => { LS.lock = false; if (LS.running) renderStep(); }, 220);
   }
+  // A small confetti burst when a lesson is passed.
+  function celebrate() {
+    const stage = $(".lesson-stage"); if (!stage) return;
+    const box = document.createElement("div"); box.className = "confetti";
+    const colors = ["var(--accent)", "var(--b1)", "var(--b2)", "var(--b3)", "var(--b4)", "var(--ok)"];
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement("i");
+      p.style.left = Math.random() * 100 + "%";
+      p.style.background = colors[i % colors.length];
+      p.style.animationDelay = (Math.random() * .35) + "s";
+      p.style.animationDuration = (1.1 + Math.random() * .6) + "s";
+      p.style.rotate = Math.random() * 360 + "deg";
+      box.appendChild(p);
+    }
+    stage.appendChild(box); setTimeout(() => box.remove(), 2200);
+  }
   // Ends practice: needs 85% accuracy to complete the lesson.
   function finishLesson() {
     LS.running = false; clearInterval(LS.timer); lsClear(); lsStats();
     const acc = Math.round((LS.hits / (LS.hits + LS.errors)) * 100), secs = Math.round((performance.now() - LS.start) / 1000), pass = acc >= 85;
     $("#ls-prompt").innerHTML = ""; recordLesson(LS.L.id, acc, secs, pass);
+    const nb = $("#ls-next"); nb.dataset.to = ""; nb.dataset.course = "";
     if (pass) {
-      const nx = LESSONS[LESSONS.findIndex((l) => l.id === LS.L.id) + 1];
-      $("#ls-caption").textContent = `Lesson complete! ${acc}% accuracy in ${secs} s.${nx ? "" : " You've finished every lesson."}`;
-      $("#ls-next").hidden = !nx; $("#ls-start").textContent = "Practise again";
+      celebrate();
+      const course = courseOf(LS.L), idx = course.lessons.findIndex((l) => l.id === LS.L.id), nx = course.lessons[idx + 1];
+      const nextCourse = COURSES[COURSES.findIndex((c) => c.id === course.id) + 1];
+      const nextOpen = nextCourse && courseUnlocked(nextCourse);
+      let msg = `Lesson complete! ${acc}% accuracy in ${secs} s.`;
+      if (nx) msg += ` Next up: ${nx.title}.`;
+      else if (nextCourse && nextOpen) msg += ` You've finished the ${course.title} course — ${nextCourse.title} is unlocked!`;
+      else msg += ` You've finished the ${course.title} course!`;
+      $("#ls-caption").textContent = msg;
+      if (nx) { nb.hidden = false; nb.textContent = "Next lesson →"; nb.dataset.to = nx.id; }
+      else if (nextCourse && nextOpen) { nb.hidden = false; nb.textContent = `Explore ${nextCourse.title} →`; nb.dataset.course = nextCourse.id; }
+      else nb.hidden = true;
+      $("#ls-start").textContent = "Practise again";
     } else { $("#ls-caption").textContent = `${acc}% accuracy. You need 85% to finish this lesson. Slow down and try again.`; $("#ls-start").textContent = "Try again"; }
   }
   $("#ls-demo").addEventListener("click", playDemo);
   $("#ls-start").addEventListener("click", startPractice);
-  $("#ls-next").addEventListener("click", () => { lessonId = LESSONS[LESSONS.findIndex((l) => l.id === LS.L.id) + 1].id; openLesson(); });
+  $("#ls-next").addEventListener("click", () => {
+    const nb = $("#ls-next");
+    if (nb.dataset.course) { learnTab = nb.dataset.course; location.hash = "#learn"; return; }
+    if (nb.dataset.to) { lessonId = nb.dataset.to; openLesson(); }
+  });
   kbdEl.addEventListener("pointerdown", (e) => { const k = e.target.closest(".key"); if (k && current === "lesson" && LS.running) { e.preventDefault(); lessonKey(k.dataset.k); } });
 
   /* ---------- Learn: tips and rhythm trainer ---------- */
-  // Draws the Learn page (lesson cards, tip of the day, tips).
+  // Draws the course tabs and the lesson cards for the selected course. A locked course shows a progress panel.
+  function renderCourses() {
+    const d = lessonState();
+    $("#course-tabs").innerHTML = COURSES.map((c) => {
+      const open = courseUnlocked(c), done = courseDone(c);
+      return `<button class="course-tab" data-course="${c.id}" role="tab" aria-selected="${learnTab === c.id}"><span class="ct-icon" aria-hidden="true">${c.icon}</span><span class="ct-body"><strong>${esc(c.title)}</strong><small>${esc(c.tagline)}</small></span>${!open ? '<span class="ct-badge lock">🔒 Locked</span>' : done ? '<span class="ct-badge done">✓ Done</span>' : (auth && auth.is_admin ? '<span class="ct-badge admin">admin</span>' : "")}</button>`;
+    }).join("");
+    const course = COURSES.find((c) => c.id === learnTab) || COURSES[0];
+    const open = courseUnlocked(course);
+    $("#course-lock").hidden = open;
+    $("#lesson-grid").hidden = !open;
+    const isAdmin = !!(auth && auth.is_admin);
+    $("#course-note").hidden = !isAdmin;
+    if (isAdmin) $("#course-note").textContent = "Admin access: every course is unlocked, whatever your progress.";
+    if (!open) {
+      const req = COURSES.find((c) => c.id === course.requires);
+      const doneCount = req.lessons.filter((L) => d[L.id] && d[L.id].done).length;
+      $("#course-lock-title").textContent = `${course.title} course is locked`;
+      $("#course-lock-text").textContent = `Complete every lesson in the ${req.title} course to unlock it. You've finished ${doneCount} of ${req.lessons.length}.`;
+      $("#course-lock-bar").style.width = Math.round((doneCount / req.lessons.length) * 100) + "%";
+      $("#course-lock-go").textContent = `Go to ${req.title}`;
+      $("#course-lock-go").dataset.course = req.id;
+    } else {
+      $("#lesson-grid").innerHTML = course.lessons.map((L, i) => `<button class="lesson-card${d[L.id] && d[L.id].done ? " done" : ""}" data-l="${L.id}" style="--i:${i}"><span class="ln">${i + 1}</span><h3>${esc(L.title)}</h3><p>${esc(L.blurb)}</p><span class="check">${d[L.id] ? (d[L.id].done ? "✓ Completed, best " + d[L.id].best + "%" : "Best so far " + d[L.id].best + "%") : "Start lesson"}</span></button>`).join("");
+    }
+  }
+  // Draws the Learn page (course tabs, lesson cards, tip of the day, tips).
   function openLearn() {
-    const d = lessonState(), day = pick(TIPS);
-    $("#lesson-grid").innerHTML = LESSONS.map((L, i) => `<button class="lesson-card${d[L.id] && d[L.id].done ? " done" : ""}" data-l="${L.id}"><span class="ln">${i + 1}</span><h3>${esc(L.title)}</h3><p>${esc(L.blurb)}</p><span class="check">${d[L.id] ? (d[L.id].done ? "✓ Completed, best " + d[L.id].best + "%" : "Best so far " + d[L.id].best + "%") : "Start lesson"}</span></button>`).join("");
+    renderCourses();
+    const day = pick(TIPS);
     $("#tip-day").innerHTML = `Tip of the day: <strong>${esc(day.title)}.</strong> ${esc(day.text)}`;
     $("#tip-grid").innerHTML = TIPS.map((t, i) => `<article class="tip-card${t === day ? " hl" : ""}" style="--i:${i}"><span class="ti" aria-hidden="true">${t.icon}</span><h3>${esc(t.title)}</h3><p>${esc(t.text)}</p></article>`).join("");
   }
+  $("#course-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-course]"); if (b) { learnTab = b.dataset.course; renderCourses(); } });
+  $("#course-lock-go").addEventListener("click", (e) => { learnTab = e.currentTarget.dataset.course || "beginners"; renderCourses(); });
   $("#lesson-grid").addEventListener("click", (e) => { const b = e.target.closest("[data-l]"); if (b) { lessonId = b.dataset.l; location.hash = "#lesson"; } });
 
   // Rhythm trainer state.
