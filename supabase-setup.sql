@@ -37,7 +37,7 @@ create table if not exists public.results (
 alter table public.results add column if not exists variant text;
 alter table public.results drop constraint if exists results_mode_check;
 alter table public.results add constraint results_mode_check
-  check (mode in ('typing','timed','balloons','blink','cafe','gap','wordle'));
+  check (mode in ('typing','timed','balloons','blink','cafe','gap','wordle','scramble','emoji'));
 create index if not exists results_board_idx on public.results (mode, variant);
 alter table public.results enable row level security;
 drop policy if exists "anyone can save a result" on public.results;   -- results now go through save_result() only
