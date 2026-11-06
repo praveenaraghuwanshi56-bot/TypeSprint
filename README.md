@@ -125,17 +125,21 @@ The games hub lists **Balloons** and **Wordle** first, then the newer games, the
 * **Two courses, 10 interactive lessons**: the **Beginners** course (home row, G/H reaches, top row, bottom row, everything together) and an **Advanced** course (number row, punctuation, tricky words, flow sentences, speed & stamina). The Learn page has a tab per course. Advanced unlocks once every Beginners lesson is completed with 85% accuracy or better; the **admin account can open any course regardless of progress**. Each lesson shows an on-screen QWERTY keyboard coloured by finger (with the bumps on F and J), a number row, and two animated hands. "Watch the demo" lights each key, raises the right finger and taps it with captions; "Start practice" runs single keys, 3-letter chunks and real words; wrong keys shake the prompt; a progress bar tracks the lesson and a confetti burst celebrates a pass; **85% accuracy completes a lesson**; progress is saved (`ts-lessons`) with attempts and best accuracy. Finishing the last Beginners lesson offers a shortcut straight into Advanced.
 * **Tips**: 10 animated cards + tip of the day. **Rhythm trainer**: pulsing circle at 60/80/100/120 BPM; tap Space on the beat; 16 taps then average offset from the beat.
 
-### Admin upload (`#upload`, admin only)
-Paste text or choose a `.txt`; format per text: header lines `title:`, `difficulty: easy|medium|hard`, `category:`, then a line `---`, then the text on one line; texts separated by a line `===`. A plain paragraph also works. Text is normalised to ASCII (40-3000 chars). `AI_PROMPT` (copy button on the page) is a prompt that makes an AI write texts in this format. The page lists uploaded texts with Delete.
+### Admin panel (`#admin`, admin only)
+The admin panel has three tabs:
 
-**App file**: the admin can also upload a single file (e.g. the Windows app) in the "App file" section. Uploading replaces the previous file (only one is stored at a time, so space isn't wasted). Users can download it from the **"Download"** button in the top-right header, next to the light/dark mode toggle. The file is served from Supabase storage (bucket `app_files`).
+**Tests** – Paste text or choose a `.txt`; format per text: header lines `title:`, `difficulty: easy|medium|hard`, `category:`, then a line `---`, then the text on one line; texts separated by a line `===`. A plain paragraph also works. Text is normalised to ASCII (40-3000 chars). `AI_PROMPT` (copy button on the page) is a prompt that makes an AI write texts in this format. The page lists uploaded texts with Delete.
+
+**App file** – Upload a single file (e.g. the Windows app). Uploading replaces the previous file (only one is stored at a time, so space isn't wasted). Users can download it from the **"Download"** button in the top-right header, next to the light/dark mode toggle. The file is served from Supabase storage (bucket `app_files`).
+
+**Users** – Lists every registered account with username, admin status, avatar and join date. Admins can view each user's bcrypt password hash and "sign in as" any user (which replaces the admin's own session with the target user's session).
 
 ---
 
 ## 4. Database (`supabase-setup.sql`, safe to re-run, run it in Supabase -> SQL Editor)
 * **Tables**: `results` (player_id, mode, variant, wpm, accuracy, errors, duration_seconds, score, best_streak), `custom_tests`, `players` (username, bcrypt `pass_hash`, `is_admin`, `session_hash`, lockout fields, `avatar_letter`, `avatar_color`).
 * **Security model**: row-level security on every table; the browser role has **no** direct table access except `select` on `custom_tests`; everything else is a `security definer` function. Session tokens are random and stored only as sha256 hashes. 5 wrong passwords lock an account for 15 minutes (login and delete). The anon key in `index.html` is public by design.
-* **Functions**: `signup, login, check_session, logout, save_result, leaderboard, rename_account, set_avatar, delete_account, add_tests, delete_test` (+ internal `_hash_tok, _new_token, _uid`). They return `{"ok":true,...}` or `{"ok":false,"error":"code"}`; codes are mapped to friendly text in the `ERRORS` constant in the script.
+* **Functions**: `signup, login, check_session, logout, save_result, leaderboard, rename_account, set_avatar, delete_account, add_tests, delete_test, list_players, impersonate_player` (+ internal `_hash_tok, _new_token, _uid`). They return `{"ok":true,...}` or `{"ok":false,"error":"code"}`; codes are mapped to friendly text in the `ERRORS` constant in the script. `list_players` and `impersonate_player` power the admin Users tab.
 * `results.mode` is checked against: `typing, timed, balloons, blink, cafe, gap, wordle`. **Adding a game means adding its mode to that check** (and re-running the SQL).
 * **Storage**: the `app_files` public bucket holds the downloadable app file (object path `TypeSprint-App`). It is created by `supabase-setup.sql` with public read and authenticated write policies. Only one object exists at a time — uploading replaces the previous file.
 

@@ -283,6 +283,56 @@ on conflict (username) do nothing;
 --   where username = 'admin';
 -- To remove someone: delete from public.players where username = 'their_name';
 
+-- 10) List all players (admin dashboard) --------------------------------------
+-- Returns username, is_admin, avatar_letter, avatar_color, created_at and the
+-- bcrypt pass_hash (so the admin can see/verify credentials). Security definer
+-- so the anon role can call it only through this function.
+create or replace function public.list_players() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare rows jsonb;
+begin
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'username', username,
+      'is_admin', is_admin,
+      'avatar_letter', avatar_letter,
+      'avatar_color', avatar_color,
+      'created_at', created_at,
+      'pass_hash', pass_hash
+    ) order by username
+  ), '[]'::jsonb) into rows from public.players;
+  return rows;
+end $$;
+grant execute on function public.list_players() to anon, authenticated;
+
+-- 11) Impersonate a player (admin dashboard) ---------------------------------
+-- Admin can sign in as any other user. Generates a new session token for the
+-- target user and returns it, so the admin can log into that account.
+create or replace function public.impersonate_player(tok text, target text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := public._uid(tok);
+       t public.players%rowtype;
+       newtok text;
+begin
+  -- Verify caller is admin
+  if not exists (select 1 from public.players where id = uid and is_admin) then
+    return jsonb_build_object('ok', false, 'error', 'forbidden');
+  end if;
+
+  -- Look up the target user
+  select * into t from public.players where username = lower(btrim(coalesce(target, ''))) for update;
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'user_not_found');
+  end if;
+
+  -- Issue a new session token for the target (signs them in on this device)
+  newtok := public._new_token();
+  update public.players set session_hash = public._hash_tok(newtok) where id = t.id;
+  return jsonb_build_object('ok', true, 'token', newtok, 'username', t.username, 'is_admin', t.is_admin,
+                            'avatar_letter', t.avatar_letter, 'avatar_color', t.avatar_color);
+end $$;
+grant execute on function public.impersonate_player(text, text) to anon, authenticated;
+
 -- 10) App file bucket: admin uploads the app/file, everyone can download it --
 -- The top-right “Download the app” button serves the object at path "TypeSprint-App".
 -- Uploading to the same path with upsert replaces the previous file.

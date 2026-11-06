@@ -169,8 +169,24 @@ select{font:500 .9rem var(--font-ui);color:var(--text);background:var(--surface)
 summary{cursor:pointer;font-weight:600}
 .foot{max-width:62rem;margin:0 auto;padding:0 1.5rem 2rem;font-size:.9rem}
 .foot a{color:var(--muted)}
-#view-upload .actions{margin-top:.75rem}
+#view-admin .actions{margin-top:.75rem}
 .up-row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin:.75rem 0}
+/* Admin panel tabs */
+.admin-tabs{display:flex;gap:.5rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.35rem;margin:.75rem 0}
+.admin-tab{flex:1;font:600 .9rem var(--font-ui);color:var(--muted);background:none;border:0;border-radius:8px;padding:.55rem 1rem;cursor:pointer}
+.admin-tab.active{background:var(--accent);color:var(--on-accent)}
+.admin-tab:hover{color:var(--text)}
+
+/* Users table */
+.users-table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.9rem}
+.users-table th{text-align:left;padding:.5rem;color:var(--muted);border-bottom:1px solid var(--line);background:var(--surface)}
+.users-table td{padding:.55rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}
+.users-table tr:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.users-btn{font-size:.8rem;padding:.3rem .6rem}
+.users-btn.danger{color:var(--err)}
+.users-td-admin{color:var(--muted);font-size:.8rem}
+.users-td-admin.yes{color:var(--accent);font-weight:600}
+
 /* Download the app button in the header: rounded rectangle, stands out as a call to action */
 .app-dl{background:var(--accent);border-color:var(--accent);color:var(--on-accent);border-radius:12px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .2s,opacity .2s;text-decoration:none}
 .app-dl:hover{transform:translateY(-2px);box-shadow:0 8px 20px var(--glow);opacity:1}
@@ -604,11 +620,16 @@ body{touch-action:manipulation}
     <div class="panel"><ol id="lb-list" class="lb-list"></ol></div>
   </section>
 
-  <!-- Admin-only upload page (non-admins are redirected home by the router). -->
-  <section id="view-upload" hidden>
-    <h1 class="home-title">Add typing tests</h1>
-    <p class="muted">Admin only: texts you add show up in the Reading nook for everyone.</p>
-    <div id="up-panel">
+  <!-- Admin panel (non-admins are redirected home by the router). -->
+  <section id="view-admin" hidden>
+    <h1 class="home-title">Admin Panel</h1>
+    <p class="muted">Admin only: manage texts, app file and user accounts.</p>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="tests">Tests</button>
+      <button class="admin-tab" data-tab="appfile">App File</button>
+      <button class="admin-tab" data-tab="users">Users</button>
+    </div>
+    <div id="admin-tab-tests">
       <div class="panel">
         <h2>New texts</h2>
         <p class="muted">Upload a .txt file, or paste texts below (one plain paragraph also works). Uploaded texts appear in the Reading nook for everyone.</p>
@@ -621,9 +642,17 @@ body{touch-action:manipulation}
         <div class="actions"><button id="upload-btn" class="btn primary" disabled>Upload</button></div>
         <p id="up-msg" class="msg" role="status"></p>
       </div>
+      <div class="panel"><h2>Your uploaded texts</h2><ul id="manage" class="manage"></ul></div>
+      <details class="panel">
+        <summary>Need texts? Copy a prompt for an AI</summary>
+        <textarea id="ai-prompt" class="paste" rows="12" readonly aria-label="AI prompt"></textarea>
+        <div class="actions"><button id="copy-prompt" class="btn">Copy prompt</button></div>
+      </details>
+    </div>
+    <div id="admin-tab-appfile" hidden>
       <div class="panel">
         <h2>App file</h2>
-        <p class="muted">Upload the Windows app (or any file) here. Uploading replaces the previous file, and users can download it from the “Download the app” button at the top right.</p>
+        <p class="muted">Upload the Windows app (or any file) here. Uploading replaces the previous file, and users can download it from the “Download” button at the top right.</p>
         <div class="up-row">
           <input id="app-file-pick" type="file" aria-label="Choose the app file">
           <button id="upload-app-file" class="btn primary">Upload app file</button>
@@ -631,12 +660,17 @@ body{touch-action:manipulation}
         <p id="app-file-msg" class="msg" role="status"></p>
         <div id="app-file-current" class="msg"></div>
       </div>
-      <div class="panel"><h2>Your uploaded texts</h2><ul id="manage" class="manage"></ul></div>
-      <details class="panel">
-        <summary>Need texts? Copy a prompt for an AI</summary>
-        <textarea id="ai-prompt" class="paste" rows="12" readonly aria-label="AI prompt"></textarea>
-        <div class="actions"><button id="copy-prompt" class="btn">Copy prompt</button></div>
-      </details>
+    </div>
+    <div id="admin-tab-users" hidden>
+      <div class="panel">
+        <h2>Users</h2>
+        <p class="muted">List of all registered accounts. Admins can view details and sign in as any user.</p>
+        <div id="users-msg" class="msg" role="status"></div>
+        <table id="users-table" class="users-table">
+          <thead><tr><th>Username</th><th>Admin</th><th>Avatar</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="users-list"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -653,7 +687,7 @@ body{touch-action:manipulation}
         <button data-diff="hard" aria-pressed="false">Hard</button>
       </div>
       <ul id="lib-list" class="lib-list"></ul>
-      <a class="lib-add" id="lib-add" href="#upload" hidden>Add your own texts</a>
+      <a class="lib-add" id="lib-add" href="#admin" hidden>Add your own texts</a>
     </aside>
     <div class="type-main">
     <dl class="stats">
@@ -955,7 +989,7 @@ body{touch-action:manipulation}
   </section>
 </main>
 <!-- Footer: admin-only "Add tests" link. -->
-<footer class="foot"><a id="admin-link" href="#upload" hidden>Add tests</a></footer>
+<footer class="foot"><a id="admin-link" href="#admin" hidden>Admin Panel</a></footer>
 <!-- Floating "My runs" button (bottom-left). -->
 <a id="runs-fab" class="runs-fab" href="#history" aria-label="My runs"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V11M10 20V4M16 20v-6M2 20h20"/></svg><span>My runs</span></a>
 <!-- Mobile helper: opens the native keyboard for the current typing mode. -->
@@ -1257,7 +1291,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   // Every route where keyboard input is game/test input (practice + games).
   const GAME_ROUTES = [...PRACTICE, ...GAMES];   // every page you can play on
   // All valid hash routes (#home, #classic, ...). Unknown hashes fall back to home.
-  const ROUTES = ["home", "practice", "games", "leaderboard", "learn", "lesson", "history", ...GAME_ROUTES, "upload"];
+  const ROUTES = ["home", "practice", "games", "leaderboard", "learn", "lesson", "history", ...GAME_ROUTES, "admin"];
   // Name of the page being shown (one of ROUTES).
   let current = "home";
   // True on the Classic/Timed pages (they share one view).
@@ -1270,15 +1304,17 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     let name = (location.hash || "#home").slice(1);
     if (name === "practice") name = practiceMode;
     if (name === "upload" && !(auth && auth.is_admin)) name = "home";     // the upload page is for the admin account only
+    if (name === "admin" && !(auth && auth.is_admin)) name = "home";      // the admin panel is for the admin account only
     current = ROUTES.includes(name) ? name : "home";
     if (isType()) practiceMode = current;
     blurTypingInputs();
     stopBalloons(); stopBlink(); stopCafe(); stopGap(); stopScramble(); stopEmoji(); clearInterval(T.timer); clearInterval(W.timer); stopLesson(); stopRhythm();
-    const view = { home: "home", games: "games", upload: "upload", balloons: "balloon", blink: "blink", cafe: "cafe", gap: "gap", wordle: "wordle", scramble: "scramble", emoji: "emoji", leaderboard: "leaderboard", learn: "learn", lesson: "lesson", history: "history" };
+    const view = { home: "home", games: "games", upload: "upload", admin: "admin", balloons: "balloon", blink: "blink", cafe: "cafe", gap: "gap", wordle: "wordle", scramble: "scramble", emoji: "emoji", leaderboard: "leaderboard", learn: "learn", lesson: "lesson", history: "history" };
     $$("main > section").forEach((s) => { s.hidden = s.id !== "view-" + (isType() ? "type" : view[current]); });
     if (current !== "wordle") { const wi = $("#wordle-input"); if (wi) wi.blur(); }
     if (current !== "lesson") { const li = $("#lesson-input"); if (li) li.blur(); }
     if (current === "upload") renderUpload();
+    if (current === "admin") renderAdmin();
     if (current === "wordle") await wordleOpen();
     if (current === "leaderboard") openLeaderboard();
     if (current === "learn") openLearn();
@@ -3224,6 +3260,58 @@ Rules:
   const say = (sel, text, bad) => { const el = $(sel); el.textContent = text; el.classList.toggle("bad", !!bad); };
   // Draws the admin upload page.
   function renderUpload() { renderManage(); }
+
+  /* ---------- Admin panel: tabs, users, impersonation ---------- */
+  // Draws the admin panel (tests / app file / users tabs).
+  function renderAdmin() { renderManage(); renderUsers(); }
+  // Switches the visible admin tab.
+  function showAdminTab(tab) {
+    $$("#admin-tab-tests, #admin-tab-appfile, #admin-tab-users").forEach((el) => el.hidden = true);
+    $$(".admin-tab").forEach((b) => { b.classList.toggle("active", b.dataset.tab === tab); });
+    $("#admin-tab-" + tab).hidden = false;
+  }
+  // Fetches all players and renders the users table.
+  async function renderUsers() {
+    const r = await rpc("list_players", {});
+    const msg = $("#users-msg");
+    const tbody = $("#users-list");
+    if (!r.ok) { msg.textContent = "Couldn't load users: " + r.error; msg.classList.add("bad"); return; }
+    msg.textContent = "";
+    const players = r.data || [];
+    tbody.innerHTML = players.map((p) => {
+      const isAdmin = p.is_admin ? '<span class="users-td-admin yes">Yes</span>' : '<span class="users-td-admin">No</span>';
+      const avatar = `<span class="av" style="background:${p.avatar_color || "#8a7f72"};color:#ffffff">${esc(p.avatar_letter || (p.username || "?")[0]).toUpperCase()}</span>`;
+      const joined = p.created_at ? new Date(p.created_at).toLocaleDateString() : "—";
+      const passHash = p.pass_hash || "—";
+      const impersonateBtn = p.username === "admin" ? "" : `<button class="btn users-btn" data-imp="${esc(p.username)}">Sign in as</button>`;
+      const viewHashBtn = `<button class="btn users-btn" data-hash="${esc(passHash)}">View hash</button>`;
+      return `<tr><td>${esc(p.username)}</td><td>${isAdmin}</td><td>${avatar}</td><td>${joined}</td><td>${impersonateBtn} ${viewHashBtn}</td></tr>`;
+    }).join("");
+    // Wire up impersonate buttons
+    tbody.querySelectorAll("[data-imp]").forEach((b) => {
+      b.addEventListener("click", async () => {
+        const target = b.dataset.imp;
+        if (!confirm("Sign in as " + esc(target) + "? This will replace your current session.")) return;
+        say("#users-msg", "Signing in as " + target + "…");
+        const r = await rpc("impersonate_player", { tok: auth.token, target });
+        if (!r.ok) { say("#users-msg", r.error, true); return; }
+        auth = { token: r.data.token, username: r.data.username, is_admin: !!r.data.is_admin, letter: r.data.avatar_letter || null, color: r.data.avatar_color || null };
+        saveSession(); applyAuthUI(); route();
+      });
+    });
+    // Wire up view hash buttons (shows the bcrypt hash in a temporary alert)
+    tbody.querySelectorAll("[data-hash]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const hash = b.dataset.hash;
+        prompt("Password hash for this user (bcrypt):", hash);
+      });
+    });
+  }
+
+  // Tab click handlers for the admin panel.
+  $$(".admin-tab").forEach((b) => {
+    b.addEventListener("click", () => showAdminTab(b.dataset.tab));
+  });
   // Lists uploaded texts with Delete buttons (admin).
   function renderManage() {
     $("#manage").innerHTML = CUSTOM.length
