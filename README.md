@@ -128,6 +128,8 @@ The games hub lists **Balloons** and **Wordle** first, then the newer games, the
 ### Admin upload (`#upload`, admin only)
 Paste text or choose a `.txt`; format per text: header lines `title:`, `difficulty: easy|medium|hard`, `category:`, then a line `---`, then the text on one line; texts separated by a line `===`. A plain paragraph also works. Text is normalised to ASCII (40-3000 chars). `AI_PROMPT` (copy button on the page) is a prompt that makes an AI write texts in this format. The page lists uploaded texts with Delete.
 
+**App file**: the admin can also upload a single file (e.g. the Windows app) in the "App file" section. Uploading replaces the previous file (only one is stored at a time, so space isn't wasted). Users can download it from the **"Download"** button in the top-right header, next to the light/dark mode toggle. The file is served from Supabase storage (bucket `app_files`).
+
 ---
 
 ## 4. Database (`supabase-setup.sql`, safe to re-run, run it in Supabase -> SQL Editor)
@@ -135,6 +137,7 @@ Paste text or choose a `.txt`; format per text: header lines `title:`, `difficul
 * **Security model**: row-level security on every table; the browser role has **no** direct table access except `select` on `custom_tests`; everything else is a `security definer` function. Session tokens are random and stored only as sha256 hashes. 5 wrong passwords lock an account for 15 minutes (login and delete). The anon key in `index.html` is public by design.
 * **Functions**: `signup, login, check_session, logout, save_result, leaderboard, rename_account, set_avatar, delete_account, add_tests, delete_test` (+ internal `_hash_tok, _new_token, _uid`). They return `{"ok":true,...}` or `{"ok":false,"error":"code"}`; codes are mapped to friendly text in the `ERRORS` constant in the script.
 * `results.mode` is checked against: `typing, timed, balloons, blink, cafe, gap, wordle`. **Adding a game means adding its mode to that check** (and re-running the SQL).
+* **Storage**: the `app_files` public bucket holds the downloadable app file (object path `TypeSprint-App`). It is created by `supabase-setup.sql` with public read and authenticated write policies. Only one object exists at a time — uploading replaces the previous file.
 
 ---
 
