@@ -674,6 +674,7 @@ body{touch-action:manipulation}
       <button class="admin-tab active" data-tab="tests">Tests</button>
       <button class="admin-tab" data-tab="appfile">App File</button>
       <button class="admin-tab" data-tab="users">Users</button>
+      <button class="admin-tab" data-tab="apikeys">API Keys</button>
     </div>
     <div id="admin-tab-tests">
       <div class="panel">
@@ -716,6 +717,18 @@ body{touch-action:manipulation}
           <thead><tr><th>Username</th><th>Admin</th><th>Avatar</th><th>Joined</th><th>Actions</th></tr></thead>
           <tbody id="users-list"></tbody>
         </table>
+      </div>
+    </div>
+    <div id="admin-tab-apikeys" hidden>
+      <div class="panel">
+        <h2>API Keys</h2>
+        <p class="muted">Get a free Gemini API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a> (no credit card required for the free tier). Enter it below to use Gemini Flash Lite for generating Word Guess hints.</p>
+        <div class="up-row">
+          <input id="gemini-api-key" type="password" aria-label="Gemini API key" placeholder="Paste your Gemini API key here">
+          <button id="save-gemini-key" class="btn primary">Save key</button>
+        </div>
+        <p id="gemini-key-msg" class="msg" role="status"></p>
+        <p class="keys">The key is stored only in your browser's localStorage and is never sent to anyone except Google's API.</p>
       </div>
     </div>
   </section>
@@ -2434,7 +2447,38 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     ]
   };
 
-  // Fetches extra words from Datamuse, gets real hints from Wikipedia + Free Dictionary APIs (no sign-in needed).
+  // Gets the Gemini API key from localStorage (set in the admin panel).
+  function getGeminiKey() {
+    try { return localStorage.getItem("ts-gemini-key") || ""; } catch { return ""; }
+  }
+
+  // Generates 4 progressive hints for a word using Gemini Flash Lite.
+  async function generateGeminiHints(word, difficulty) {
+    const key = getGeminiKey();
+    if (!key) return null;
+    try {
+      const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + encodeURIComponent(key), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Generate exactly 4 progressive hints for the word "' + word + '" suitable for 5th-6th graders. Hints should be meaningful and contextual (e.g., for "classroom": "It is a place that is present in every country" then "People of all ages go there"), getting more specific. Return ONLY a JSON array of 4 strings, no markdown, no explanation.' }] }]
+        })
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const match = text.match(/\\[[\\s\\S]*?\\]/);
+      if (match) {
+        const hints = JSON.parse(match[0]);
+        if (Array.isArray(hints) && hints.length === 4 && hints.every(h => typeof h === "string")) {
+          return hints;
+        }
+      }
+      return null;
+    } catch { return null; }
+  }
+
+  // Fetches extra words from Datamuse, gets real hints from Gemini (if API key set) or Wikipedia + Free Dictionary APIs.
   async function fetchGuessWords(difficulty) {
     const maxLen = { easy: 5, medium: 6, hard: 9 }[difficulty];
     const minLen = { easy: 3, medium: 4, hard: 5 }[difficulty];
@@ -2449,38 +2493,44 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
         for (const x of words) {
           const w = x.word;
           if (/^[a-z]+$/.test(w) && w.length >= minLen && w.length <= maxLen && !BAD_SUB.test(w) && !BAD_WORDS.has(w)) {
-            // Try Wikipedia summary first for a real, readable hint
-            let hint = null;
-            if (wikiCalls < 8) {
-              wikiCalls++;
-              try {
-                const wr = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(w)}`);
-                if (wr.ok) {
-                  const wd = await wr.json();
-                  if (wd.extract) {
-                    hint = wd.extract;
-                  }
-                }
-              } catch {}
+            // Try Gemini first if API key is set
+            let hints = null;
+            if (getGeminiKey()) {
+              hints = await generateGeminiHints(w, difficulty);
             }
-            // Fallback to Free Dictionary API
-            if (!hint) {
-              try {
-                const dr = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${w}`);
-                if (dr.ok) {
-                  const d = await dr.json();
-                  if (d[0] && d[0].meanings && d[0].meanings[0] && d[0].meanings[0].definitions[0]) {
-                    hint = d[0].meanings[0].definitions[0].definition;
+            // Fallback to Wikipedia summary
+            if (!hints) {
+              let hint = null;
+              if (wikiCalls < 8) {
+                wikiCalls++;
+                try {
+                  const wr = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(w)}`);
+                  if (wr.ok) {
+                    const wd = await wr.json();
+                    if (wd.extract) {
+                      hint = wd.extract;
+                    }
                   }
-                }
-              } catch {}
+                } catch {}
+              }
+              // Fallback to Free Dictionary API
+              if (!hint) {
+                try {
+                  const dr = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${w}`);
+                  if (dr.ok) {
+                    const d = await dr.json();
+                    if (d[0] && d[0].meanings && d[0].meanings[0] && d[0].meanings[0].definitions[0]) {
+                      hint = d[0].meanings[0].definitions[0].definition;
+                    }
+                  }
+                } catch {}
+              }
+              hints = [hint || `A word related to "${concept}"`,
+                       `It starts with the letter "${w[0]}"`,
+                       `It has ${w.length} letters`,
+                       `It is a common ${difficulty} level word`];
             }
-            fetched.push({ w, hints: [
-              hint || `A word related to "${concept}"`,
-              `It starts with the letter "${w[0]}"`,
-              `It has ${w.length} letters`,
-              `It is a common ${difficulty} level word`
-            ] });
+            fetched.push({ w, hints });
           }
         }
       }));
@@ -3547,7 +3597,7 @@ Rules:
   function renderAdmin() { renderManage(); renderUsers(); }
   // Switches the visible admin tab.
   function showAdminTab(tab) {
-    $$("#admin-tab-tests, #admin-tab-appfile, #admin-tab-users").forEach((el) => el.hidden = true);
+    $$("#admin-tab-tests, #admin-tab-appfile, #admin-tab-users, #admin-tab-apikeys").forEach((el) => el.hidden = true);
     $$(".admin-tab").forEach((b) => { b.classList.toggle("active", b.dataset.tab === tab); });
     $("#admin-tab-" + tab).hidden = false;
   }
@@ -3592,6 +3642,14 @@ Rules:
   // Tab click handlers for the admin panel.
   $$(".admin-tab").forEach((b) => {
     b.addEventListener("click", () => showAdminTab(b.dataset.tab));
+  });
+  // Save Gemini API key.
+  $("#save-gemini-key").addEventListener("click", () => {
+    const key = $("#gemini-api-key").value.trim();
+    if (!key) { $("#gemini-key-msg").textContent = "Please enter a key."; return; }
+    localStorage.setItem("ts-gemini-key", key);
+    $("#gemini-key-msg").textContent = "Key saved.";
+    $("#gemini-key-msg").className = "msg good";
   });
   // Lists uploaded texts with Delete buttons (admin).
   function renderManage() {
