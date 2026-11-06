@@ -240,6 +240,25 @@ summary{cursor:pointer;font-weight:600}
 :root{--absent:#8a7f72}
 :root[data-theme="dark"]{--absent:#4b433c}
 .card:nth-child(5) .card-emoji{background:var(--b1)}
+
+/* ---------- Word Guess CSS ---------- */
+.guess-stage{position:relative;min-height:22rem;display:grid;place-content:center;gap:.75rem;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;cursor:text}
+#g-overlay{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;text-align:center;padding:2rem;background:color-mix(in srgb,var(--surface) 92%,transparent)}
+#g-overlay h2{margin:0;font-size:1.8rem;letter-spacing:-.02em}
+#g-board-wrap{display:none;flex-direction:column;align-items:center;gap:.75rem;padding:1.5rem;width:100%}
+#g-stage.overlay-closed #g-board-wrap{display:flex}
+#g-stage.overlay-open #g-board-wrap{display:none}
+.guess-hint{margin:.25rem 0 .5rem;font:600 1rem var(--font-ui);color:var(--text)}
+.guess-row{display:flex;gap:.75rem;align-items:center;font-size:.9rem;color:var(--muted)}
+.grow{display:grid;grid-template-columns:repeat(var(--cols,5),1fr);gap:.4rem;max-width:22rem}
+.gtile{width:2.6rem;height:2.6rem;display:grid;place-items:center;border:1px solid var(--line);border-radius:6px;background:var(--bg);font:600 1.25rem var(--font-mono);text-transform:uppercase}
+.gtile.correct{background:var(--ok);color:var(--on-accent);border-color:var(--ok)}
+.gtile.present{background:var(--accent);color:#ffffff;border-color:var(--accent)}
+.gtile.absent{background:var(--surface);color:var(--muted);border-color:var(--line)}
+.guess-msg{min-height:1.5rem;margin:.5rem 0 0;font:600 .9rem var(--font-ui)}
+.guess-msg.good{color:var(--ok)}.guess-msg.bad{color:var(--err)}.guess-msg.neutral{color:var(--accent)}
+@media (max-width:640px){.gtile{width:2.2rem;height:2.2rem;font-size:1rem}}
+.card:nth-child(8) .card-emoji{background:var(--b4)}
 /* ============ Wordle ============ */
 .wordle{display:grid;justify-items:center;gap:.9rem}
 .wtoast{min-height:1.6rem;margin:0;font-weight:600;opacity:0;transition:opacity .2s}
@@ -587,7 +606,7 @@ body{touch-action:manipulation}
     <p class="home-sub">Pick a mode, settle in, and type at your own pace.</p>
     <div class="cards">
       <a class="card" href="#practice"><span class="card-emoji" aria-hidden="true">⌨️</span><h2>Typing practice</h2><p>Classic passages or timed rounds, with your own texts and Wikipedia articles.</p></a>
-      <a class="card" href="#games"><span class="card-emoji" aria-hidden="true">🎮</span><h2>Games</h2><p>Balloons, Wordle, Word Scramble, Emoji Rush, Blink words, Tea Time Cafe and Fill the gap.</p></a>
+      <a class="card" href="#games"><span class="card-emoji" aria-hidden="true">🎮</span><h2>Games</h2><p>Balloons, Wordle, Word Scramble, Emoji Rush, Blink words, Tea Time Cafe, Fill the gap and Word Guess.</p></a>
       <a class="card" href="#learn"><span class="card-emoji" aria-hidden="true">🌱</span><h2>Learn to touch type</h2><p>Animated lessons for the home row and beyond, plus tips for typing faster.</p></a>
     </div>
   </section>
@@ -601,9 +620,37 @@ body{touch-action:manipulation}
       <a class="card" href="#wordle"><span class="card-emoji" aria-hidden="true">🔤</span><h2>Wordle</h2><p>Find the hidden word in six tries. Choose 4, 5 or 6 letters.</p></a>
       <a class="card" href="#scramble"><span class="card-emoji" aria-hidden="true">🔀</span><h2>Word Scramble</h2><p>Unscramble the letters and type the word before the timer runs out.</p></a>
       <a class="card" href="#emoji"><span class="card-emoji" aria-hidden="true">😊</span><h2>Emoji Rush</h2><p>An emoji appears. Type its name as fast as you can.</p></a>
+      <a class="card" href="#guess"><span class="card-emoji" aria-hidden="true">💡</span><h2>Word Guess</h2><p>Guess the hidden word from a hint in 3 tries. Easy, medium or hard.</p></a>
       <a class="card" href="#blink"><span class="card-emoji" aria-hidden="true">👀</span><h2>Blink words</h2><p>A word appears, then hides. Type it from memory.</p></a>
       <a class="card" href="#cafe"><span class="card-emoji" aria-hidden="true">🍵</span><h2>Tea Time Cafe</h2><p>Serve each customer's order before their patience runs out.</p></a>
       <a class="card" href="#gap"><span class="card-emoji" aria-hidden="true">🧩</span><h2>Fill the gap</h2><p>Complete a Wikipedia sentence by typing the missing word.</p></a>
+    </div>
+  </section>
+
+  <!-- Word Guess game page. -->
+  <section id="view-guess" hidden>
+    <h1 class="home-title">Word Guess</h1>
+    <p class="muted">Guess the hidden word from a clue. You have 3 attempts. Letters turn green if they're in the right place, yellow if they're in the word but wrong place.</p>
+    <div class="guess-stage" id="g-stage" class="overlay-open">
+      <div id="g-overlay">
+        <h2>Pick a difficulty</h2>
+        <p id="guess-diff-label">Difficulty: Easy (3-5 letters)</p>
+        <div class="seg" id="guess-diffs">
+          <button data-d="easy" aria-pressed="true">Easy</button>
+          <button data-d="medium">Medium</button>
+          <button data-d="hard">Hard</button>
+        </div>
+        <div class="actions"><button id="guess-start" class="btn primary">Start game</button></div>
+      </div>
+      <div id="g-board-wrap">
+        <p id="guess-hint" class="guess-hint"></p>
+        <div class="guess-row" id="guess-stats"><span id="guess-attempt">0/3</span> attempts &nbsp;|&nbsp; <span id="guess-wordlen">5</span> letters</div>
+        <div id="guess-board" class="grow"></div>
+        <p id="guess-msg" class="guess-msg"></p>
+        <input id="guess-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type your guess" autocomplete="off" autocapitalize="off" autocorrect="false" spellcheck="false">
+        <div class="actions"><button id="guess-new" class="btn">New word</button></div>
+        <a class="back" href="#games">← All games</a>
+      </div>
     </div>
   </section>
 
@@ -1309,13 +1356,14 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (isType()) practiceMode = current;
     blurTypingInputs();
     stopBalloons(); stopBlink(); stopCafe(); stopGap(); stopScramble(); stopEmoji(); clearInterval(T.timer); clearInterval(W.timer); stopLesson(); stopRhythm();
-    const view = { home: "home", games: "games", upload: "upload", admin: "admin", balloons: "balloon", blink: "blink", cafe: "cafe", gap: "gap", wordle: "wordle", scramble: "scramble", emoji: "emoji", leaderboard: "leaderboard", learn: "learn", lesson: "lesson", history: "history" };
+    const view = { home: "home", games: "games", upload: "upload", admin: "admin", balloons: "balloon", blink: "blink", cafe: "cafe", gap: "gap", wordle: "wordle", scramble: "scramble", emoji: "emoji", guess: "guess", leaderboard: "leaderboard", learn: "learn", lesson: "lesson", history: "history" };
     $$("main > section").forEach((s) => { s.hidden = s.id !== "view-" + (isType() ? "type" : view[current]); });
     if (current !== "wordle") { const wi = $("#wordle-input"); if (wi) wi.blur(); }
     if (current !== "lesson") { const li = $("#lesson-input"); if (li) li.blur(); }
     if (current === "upload") renderUpload();
     if (current === "admin") renderAdmin();
     if (current === "wordle") await wordleOpen();
+    if (current === "guess") startGuess();
     if (current === "leaderboard") openLeaderboard();
     if (current === "learn") openLearn();
     if (current === "lesson") openLesson();
@@ -1337,6 +1385,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   const restart = async () => {
     if (isType()) resetTest(); else if (current === "balloons") startBalloons(); else if (current === "blink") startBlink();
     else if (current === "cafe") startCafe(); else if (current === "gap") startGap(); else if (current === "wordle") await wordleOpen();
+    else if (current === "guess") startGuess();
     else if (current === "scramble") startScramble(); else if (current === "emoji") startEmoji();
   };
   $("#practice-mode").addEventListener("click", (e) => { const b = e.target.closest("[data-m]"); if (b) location.hash = "#" + b.dataset.m; });
@@ -2342,6 +2391,200 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   eStage.addEventListener("click", () => eIn.focus());
   $("#start-emoji").addEventListener("click", startEmoji);
 
+  /* ---------- Word Guess: guess a word from a hint, 3 attempts ---------- */
+  // Word Guess: 3 attempts to guess a word from a hint. Color-coded feedback
+  // (green = right letter right place, yellow = right letter wrong place).
+  // Words come from Datamuse, filtered by difficulty and suitability for 5-6 graders.
+  const gIn = $("#guess-input");
+  const gBoard = $("#guess-board");
+  const gGuessOverlay = $("#g-overlay");
+  const GUESS_WORD_HINTS = {
+    easy: [
+      { w: "cat", h: "A small furry pet that says meow" },
+      { w: "dog", h: "A furry pet that says woof and wags its tail" },
+      { w: "sun", h: "The bright star in the sky during the day" },
+      { w: "moon", h: "Shines in the sky at night" },
+      { w: "tree", h: "Grows outdoors with leaves and branches" },
+      { w: "fish", h: "Lives in water and swims with fins" },
+      { w: "bird", h: "Has feathers, wings and can fly" },
+      { w: "book", h: "You read pages of words in it" },
+      { w: "cup", h: "You drink water or juice from it" },
+      { w: "bed", h: "You sleep on it at night" }
+    ],
+    medium: [
+      { w: "apple", h: "A red or green crunchy fruit" },
+      { w: "water", h: "You drink it to stay alive" },
+      { w: "music", h: "Songs you listen to with your ears" },
+      { w: "school", h: "A place where children learn" },
+      { w: "happy", h: "A feeling of joy or smiling" },
+      { w: "table", h: "Has legs and you put things on top" },
+      { w: "cloud", h: "White fluffy thing in the sky" },
+      { w: "bread", h: "You make sandwiches with it" },
+      { w: "green", h: "A color like grass or leaves" },
+      { w: "house", h: "Where a family lives" }
+    ],
+    hard: [
+      { w: "garden", h: "A place where flowers and vegetables grow" },
+      { w: "summer", h: "The hottest season of the year" },
+      { w: "window", h: "In a wall, lets you see outside" },
+      { w: "friend", h: "Someone you like to play with" },
+      { w: "pencil", h: "You write or draw with it" },
+      { w: "dragon", h: "A make-believe animal that breathes fire" },
+      { w: "jungle", h: "A place with many trees and wild animals" },
+      { w: "pocket", h: "A small bag sewn into clothes" },
+      { w: "rabbit", h: "A small animal with long ears that hops" },
+      { w: "butter", h: "A yellow spread you put on bread" }
+    ]
+  };
+
+  // Fetches extra words from Datamuse for a difficulty level (falls back to curated list).
+  async function fetchGuessWords(difficulty) {
+    const maxLen = { easy: 5, medium: 6, hard: 7 }[difficulty];
+    const minLen = { easy: 3, medium: 4, hard: 5 }[difficulty];
+    const concepts = { easy: ["dog", "sun", "tree", "book", "fish"], medium: ["apple", "school", "water", "music", "house"], hard: ["garden", "summer", "window", "friend", "jungle"] }[difficulty];
+    let fetched = [];
+    try {
+      await Promise.allSettled(concepts.map(async (concept) => {
+        const r = await fetch(`https://api.datamuse.com/words?ml=${encodeURIComponent(concept)}&max=50&md=f`);
+        if (!r.ok) return;
+        const words = await r.json();
+        for (const x of words) {
+          const w = x.word;
+          if (/^[a-z]+$/.test(w) && w.length >= minLen && w.length <= maxLen && !BAD_SUB.test(w) && !BAD_WORDS.has(w)) {
+            fetched.push({ w, h: `A word related to "${concept}"` });
+          }
+        }
+      }));
+    } catch {}
+    const curated = GUESS_WORD_HINTS[difficulty];
+    const seen = new Set(curated.map((c) => c.w));
+    for (const f of fetched) { if (!seen.has(f.w)) { curated.push(f); seen.add(f.w); } }
+  }
+
+  // Word Guess state
+  const GW = { on: false, word: "", hint: "", difficulty: "easy", attempts: [], cur: "", over: false, busy: false, score: 0, best: 0, started: 0 };
+
+  // Picks a random word-hint pair for the current difficulty.
+  function pickGuessWord() {
+    const list = GUESS_WORD_HINTS[GW.difficulty];
+    const p = pick(list);
+    GW.word = p.w; GW.hint = p.h;
+  }
+
+  // Draws the difficulty selector overlay.
+  function guessOverlay(difficulty) {
+    GW.difficulty = difficulty;
+    $("#guess-hint").textContent = "";
+    $("#guess-msg").textContent = "";
+    $("#guess-msg").className = "guess-msg";
+    const diffs = { easy: "Easy (3-5 letters)", medium: "Medium (4-6 letters)", hard: "Hard (5-7 letters)" };
+    $("#guess-diff-label").textContent = `Difficulty: ${diffs[GW.difficulty]}`;
+    guessRenderBoard();
+    gGuessOverlay.hidden = false;
+  }
+
+  // Renders the 3x5 tile board with current guesses.
+  function guessRenderBoard() {
+    const len = GW.word.length;
+    gBoard.style.setProperty("--cols", len);
+    gBoard.innerHTML = Array.from({ length: 3 }, (_, r) => {
+      const attempt = GW.attempts[r] || "";
+      return `<div class="grow">${Array.from({ length: len }, (_, i) => `<div class="gtile">${attempt[i] || ""}</div>`).join("")}</div>`;
+    }).join("");
+    GW.attempts.forEach((att, r) => {
+      if (att.length === len) {
+        const marks = gScore(att, GW.word);
+        const tiles = gBoard.children[r].children;
+        marks.forEach((m, i) => { tiles[i].className = "gtile " + m; });
+      }
+    });
+    if (!GW.over && GW.attempts.length < 3) {
+      const curRow = gBoard.children[GW.attempts.length];
+      for (let i = 0; i < GW.cur.length; i++) curRow.children[i].textContent = GW.cur[i];
+    }
+  }
+
+  // Scores a guess like Wordle: 'correct' | 'present' | 'absent'.
+  function gScore(guess, answer) {
+    const m = Array(guess.length).fill("absent"), left = {};
+    for (let i = 0; i < guess.length; i++) { if (guess[i] === answer[i]) m[i] = "correct"; else left[answer[i]] = (left[answer[i] || 0] + 1) || 1; }
+    for (let i = 0; i < guess.length; i++) if (m[i] !== "correct" && left[guess[i]] > 0) { m[i] = "present"; left[guess[i]]--; }
+    return m;
+  }
+
+  // Starts a new Word Guess game (after difficulty chosen).
+  async function startGuess() {
+    GW.on = true; GW.over = false; GW.busy = false; GW.attempts = []; GW.cur = "";
+    GW.score = 0; GW.started = performance.now();
+    gGuessOverlay.hidden = true; gIn.value = ""; gIn.focus();
+    await fetchGuessWords(GW.difficulty);
+    pickGuessWord();
+    $("#guess-hint").textContent = `Hint: ${GW.hint}`;
+    guessRenderBoard(); gStats();
+  }
+
+  // Updates the attempt counter and status.
+  function gStats() {
+    setText($("#guess-attempt"), `${GW.attempts.length}/3`);
+    setText($("#guess-wordlen"), GW.word.length);
+  }
+
+  // Handles key input.
+  function gPress(k) {
+    if (GW.over || GW.busy || !GW.on) return;
+    if (k === "enter") return gSubmit();
+    if (k === "back") { GW.cur = GW.cur.slice(0, -1); guessRenderBoard(); return; }
+    if (/^[a-z]$/.test(k) && GW.cur.length < GW.word.length) { GW.cur += k; guessRenderBoard(); }
+  }
+
+  // Submits the current guess.
+  async function gSubmit() {
+    if (GW.cur.length !== GW.word.length) { gMsg("Not enough letters", "bad"); return; }
+    if (!(await wValid(GW.cur))) { gMsg("Not a real word", "bad"); return; }
+    GW.busy = true;
+    const marks = gScore(GW.cur, GW.word);
+    GW.attempts.push(GW.cur);
+    const correct = GW.cur === GW.word;
+    GW.score += correct ? (3 - GW.attempts.length) * 10 : 0;
+    gStats(); guessRenderBoard();
+    if (correct) { GW.over = true; gMsg(`You got it! +${GW.score}`, "good"); endGuess(true); return; }
+    if (GW.attempts.length >= 3) { GW.over = true; gMsg(`It was ${GW.word.toUpperCase()}`, "bad"); endGuess(false); return; }
+    gMsg("Try again!", "neutral");
+    GW.busy = false; GW.cur = ""; guessRenderBoard();
+  }
+
+  function gMsg(text, kind) {
+    const el = $("#guess-msg"); el.textContent = text; el.className = "guess-msg " + kind;
+  }
+
+  // Ends the game and shows results.
+  function endGuess(win) {
+    GW.on = false; GW.busy = false;
+    const secs = (performance.now() - GW.started) / 1000;
+    if (win) GW.best++;
+    showResults({
+      mode: "guess", variant: GW.difficulty, label: `Word Guess (${GW.difficulty})`,
+      wpm: secs > 1 ? Math.round(GW.word.length / 5 / (secs / 60)) : 0, scale: 1,
+      accuracy: 100, errors: GW.attempts.length - (win ? 1 : 0), duration_seconds: secs,
+      score: GW.score, best_streak: GW.best,
+      extra: [["Difficulty", GW.difficulty], ["Score", GW.score], ["Best", GW.best], ["Word", GW.word.toUpperCase()]]
+    });
+  }
+
+  // Physical keyboard input for Word Guess.
+  gIn.addEventListener("input", () => {
+    if (!GW.on) { gIn.value = ""; return; }
+    const v = gIn.value.toLowerCase().replace(/[^a-z]/g, "").slice(0, GW.word.length);
+    gIn.value = v; GW.cur = v; guessRenderBoard();
+  });
+
+  gBoard.addEventListener("click", () => gIn.focus());
+  $("#guess-new").addEventListener("click", () => guessOverlay(GW.difficulty));
+  $("[data-d=easy]").addEventListener("click", () => guessOverlay("easy"));
+  $("[data-d=medium]").addEventListener("click", () => guessOverlay("medium"));
+  $("[data-d=hard]").addEventListener("click", () => guessOverlay("hard"));
+  $("#guess-start").addEventListener("click", startGuess);
+
   /* ---------- Reading nook: slide-in side panel on the left ---------- */
   // The Practice section (holds the sliding Reading nook).
   const typeView = $("#view-type"), mqNarrow = matchMedia("(max-width:900px)");
@@ -2555,6 +2798,9 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     { id: "gap", label: "Fill the gap, score", mode: "gap", metric: "score", unit: "pts" },
     { id: "scramble", label: "Word Scramble, score", mode: "scramble", metric: "score", unit: "pts" },
     { id: "emoji", label: "Emoji Rush, score", mode: "emoji", metric: "score", unit: "pts" },
+    { id: "guess-easy", label: "Word Guess Easy, score", mode: "guess", variant: "easy", metric: "score", unit: "pts" },
+    { id: "guess-medium", label: "Word Guess Medium, score", mode: "guess", variant: "medium", metric: "score", unit: "pts" },
+    { id: "guess-hard", label: "Word Guess Hard, score", mode: "guess", variant: "hard", metric: "score", unit: "pts" },
     { id: "wordle4", label: "Wordle 4 letters, best streak", mode: "wordle", variant: "4", metric: "best_streak", unit: "in a row" },
     { id: "wordle5", label: "Wordle 5 letters, best streak", mode: "wordle", variant: "5", metric: "best_streak", unit: "in a row" },
     { id: "wordle6", label: "Wordle 6 letters, best streak", mode: "wordle", variant: "6", metric: "best_streak", unit: "in a row" }
