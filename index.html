@@ -2481,6 +2481,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     $("#guess-diff-label").textContent = `Difficulty: ${diffs[GW.difficulty]}`;
     guessRenderBoard();
     gGuessOverlay.hidden = false;
+    document.getElementById("g-stage").classList.replace("overlay-closed", "overlay-open");
   }
 
   // Renders the 3x5 tile board with current guesses.
@@ -2516,7 +2517,9 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   async function startGuess() {
     GW.on = true; GW.over = false; GW.busy = false; GW.attempts = []; GW.cur = "";
     GW.score = 0; GW.started = performance.now();
-    gGuessOverlay.hidden = true; gIn.value = ""; gIn.focus();
+    gGuessOverlay.hidden = true;
+    document.getElementById("g-stage").classList.replace("overlay-open", "overlay-closed");
+    gIn.value = ""; gIn.focus();
     await fetchGuessWords(GW.difficulty);
     pickGuessWord();
     $("#guess-hint").textContent = `Hint: ${GW.hint}`;
