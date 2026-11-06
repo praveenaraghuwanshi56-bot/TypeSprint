@@ -618,6 +618,16 @@ body{touch-action:manipulation}
         <div class="actions"><button id="upload-btn" class="btn primary" disabled>Upload</button></div>
         <p id="up-msg" class="msg" role="status"></p>
       </div>
+      <div class="panel">
+        <h2>App file</h2>
+        <p class="muted">Upload the Windows app (or any file) here. Uploading replaces the previous file, and users can download it from the “Download the app” button at the top right.</p>
+        <div class="up-row">
+          <input id="app-file-pick" type="file" aria-label="Choose the app file">
+          <button id="upload-app-file" class="btn primary">Upload app file</button>
+        </div>
+        <p id="app-file-msg" class="msg" role="status"></p>
+        <div id="app-file-current" class="msg"></div>
+      </div>
       <div class="panel"><h2>Your uploaded texts</h2><ul id="manage" class="manage"></ul></div>
       <details class="panel">
         <summary>Need texts? Copy a prompt for an AI</summary>
@@ -1174,21 +1184,22 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   $("#theme-toggle").addEventListener("click", () => setMode(root.dataset.theme === "dark" ? "light" : "dark"));
   // "Download the app": TypeSprint is a single-file web app, so this saves
   // index.html as "TypeSprint.html" so it can be run offline or re-uploaded elsewhere.
+  // "Download the app": downloads the file the admin uploaded through the
+  // admin panel (Supabase storage bucket "app_files"), not this HTML page.
   $("#dl-app").addEventListener("click", async (e) => {
     e.preventDefault();
+    if (!sb) return alert("The app file can’t be downloaded until the site is connected to Supabase.");
     try {
-      const res = await fetch("index.html", { cache: "no-store" });
-      if (!res.ok) throw new Error("not available");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const { data } = sb.storage.from("app_files").getPublicUrl("TypeSprint-App");
+      const url = data && data.publicUrl;
+      if (!url) throw new Error("no url");
       const a = document.createElement("a");
-      a.href = url; a.download = "TypeSprint.html";
+      a.href = url; a.download = "TypeSprint-App";
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
     } catch {
-      alert("TypeSprint is a web app — there is no separate app file. Open this page in your browser and choose “Add to Home Screen” to install it on your phone.");
+      alert("No app file has been uploaded yet. The admin can upload one in the admin panel, then users can download it from here.");
     }
   });
   palBtn.addEventListener("click", () => (themeMenu.hidden ? openTheme() : closeTheme()));
@@ -3223,6 +3234,28 @@ Rules:
       $("#file-pick").value = "";
     } catch {
       say("#up-msg", "Couldn't read that file.", true);
+    }
+  });
+  // Admin uploads the app file (e.g. the Windows app) to Supabase storage.
+  // Uploading to the fixed path "TypeSprint-App" replaces the previous file,
+  // so the top-right “Download the app” button always serves the latest one.
+  $("#upload-app-file").addEventListener("click", async () => {
+    const f = $("#app-file-pick").files[0];
+    if (!f) return say("#app-file-msg", "Choose a file first.", true);
+    if (!sb) return say("#app-file-msg", "Not connected to Supabase.", true);
+    say("#app-file-msg", "Uploading…");
+    try {
+      await sb.storage.from("app_files").upload("TypeSprint-App", f, { upsert: true, contentType: f.type });
+      const { data } = sb.storage.from("app_files").getPublicUrl("TypeSprint-App");
+      const url = data && data.publicUrl;
+      $("#app-file-current").innerHTML = url
+        ? `Current file: <a href="${url}" download>Download ${esc(f.name)}</a>`
+        : `Current file: ${esc(f.name)}`;
+      $("#app-file-msg").textContent = `Uploaded ${esc(f.name)}. Users can download it from the top-right button.`;
+      $("#app-file-msg").classList.remove("bad");
+      $("#app-file-pick").value = "";
+    } catch (err) {
+      say("#app-file-msg", "Upload failed: " + (err && err.message ? err.message : String(err)), true);
     }
   });
   $("#upload-btn").addEventListener("click", async () => {
