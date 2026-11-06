@@ -172,8 +172,11 @@ summary{cursor:pointer;font-weight:600}
 #view-upload .actions{margin-top:.75rem}
 .up-row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin:.75rem 0}
 /* Download the app button in the header: rounded rectangle, stands out as a call to action */
-.app-dl{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.app-dl:hover{opacity:.9;border-color:var(--accent)}
+.app-dl{background:var(--accent);border-color:var(--accent);color:var(--on-accent);border-radius:12px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .2s,opacity .2s}
+.app-dl:hover{transform:translateY(-2px);box-shadow:0 8px 20px var(--glow);opacity:1}
+.app-dl:active{transform:translateY(0);box-shadow:0 4px 10px var(--glow)}
+.app-dl::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.15);transform:translateX(-100%) skewX(-20deg);transition:transform .6s}
+.app-dl:hover::after{transform:translateX(150%) skewX(-20deg)}
 
 .attrib{margin:.75rem 0 0;color:var(--muted);font-size:.85rem}
 .attrib a{color:inherit}
@@ -556,7 +559,7 @@ body{touch-action:manipulation}
     <button id="theme-toggle" class="icon-btn" aria-label="Switch between light and dark theme">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/></svg>
     </button>
-    <a id="dl-app" class="btn app-dl" href="#" aria-label="Download the TypeSprint app">Download the app</a>
+    <a id="dl-app" class="btn app-dl" href="#" aria-label="Download the TypeSprint app"><span aria-hidden="true">⬇️</span> Download</a>
   </div>
 </header>
 
@@ -1182,8 +1185,6 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   // Closes the appearance popover.
   function closeTheme() { themeMenu.hidden = true; palBtn.setAttribute("aria-expanded", "false"); }
   $("#theme-toggle").addEventListener("click", () => setMode(root.dataset.theme === "dark" ? "light" : "dark"));
-  // "Download the app": TypeSprint is a single-file web app, so this saves
-  // index.html as "TypeSprint.html" so it can be run offline or re-uploaded elsewhere.
   // "Download the app": downloads the file the admin uploaded through the
   // admin panel (Supabase storage bucket "app_files"), not this HTML page.
   $("#dl-app").addEventListener("click", async (e) => {
@@ -1193,8 +1194,10 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
       const { data } = sb.storage.from("app_files").getPublicUrl("TypeSprint-App");
       const url = data && data.publicUrl;
       if (!url) throw new Error("no url");
+      // Cache-busting param so the browser/CDN always serves the latest upload
+      const dlUrl = url + (url.includes("?") ? "&t=" : "?t=") + Date.now();
       const a = document.createElement("a");
-      a.href = url; a.download = "TypeSprint-App";
+      a.href = dlUrl; a.download = "TypeSprint-App";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -3245,11 +3248,15 @@ Rules:
     if (!sb) return say("#app-file-msg", "Not connected to Supabase.", true);
     say("#app-file-msg", "Uploading…");
     try {
-      await sb.storage.from("app_files").upload("TypeSprint-App", f, { upsert: true, contentType: f.type });
+      // Remove any existing file at this path first, so the new upload
+      // always replaces the previous one cleanly.
+      await sb.storage.from("app_files").remove(["TypeSprint-App"]);
+      await sb.storage.from("app_files").upload("TypeSprint-App", f, { contentType: f.type });
       const { data } = sb.storage.from("app_files").getPublicUrl("TypeSprint-App");
       const url = data && data.publicUrl;
+      const dlUrl = url ? url + (url.includes("?") ? "&t=" : "?t=") + Date.now() : "";
       $("#app-file-current").innerHTML = url
-        ? `Current file: <a href="${url}" download>Download ${esc(f.name)}</a>`
+        ? `Current file: <a href="${dlUrl}" download>Download ${esc(f.name)}</a>`
         : `Current file: ${esc(f.name)}`;
       $("#app-file-msg").textContent = `Uploaded ${esc(f.name)}. Users can download it from the top-right button.`;
       $("#app-file-msg").classList.remove("bad");
