@@ -1,0 +1,68 @@
+# Builds the single-file Windows app on GitHub's free Windows machine.
+# Run it: GitHub repo > Actions > "Build Windows app" > Run workflow.
+# Before running, raise __version__ in desktop/src/version.py.
+name: Build Windows app
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "What's new (shown to people when the update is offered)"
+        default: ""
+      publish:
+        description: "Publish as a GitHub Release (so installed apps update themselves)?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install packages
+        run: python -m pip install -r requirements.txt
+
+      - name: Prepare offline website copy (from index.html in the repo root)
+        run: python tools/prepare_web.py
+
+      - name: Build TypeSprint.exe
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name TypeSprint --icon assets/icon.ico --paths src --add-data "src/web;web" src/main.py
+
+      - name: Self-check the exe
+        run: |
+          $p = Start-Process -FilePath dist/TypeSprint.exe -ArgumentList "--selftest" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Self-check failed (exit code $($p.ExitCode))" }
+
+      - name: Write version.json
+        env:
+          NOTES: ${{ inputs.notes }}
+        run: python tools/make_release.py --repo "${{ github.repository }}" --notes "$env:NOTES"
+
+      - name: Keep the exe as a downloadable build result
+        uses: actions/upload-artifact@v4
+        with:
+          name: TypeSprint-exe
+          path: |
+            desktop/dist/TypeSprint.exe
+            desktop/dist/version.json
+
+      - name: Publish release
+        if: ${{ inputs.publish }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          $v = python -c "import sys;sys.path.insert(0,'src');from version import __version__;print(__version__)"
+          gh release create "v$v" dist/TypeSprint.exe dist/version.json --title "TypeSprint $v" --notes "$env:NOTES"
