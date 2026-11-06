@@ -170,6 +170,10 @@ summary{cursor:pointer;font-weight:600}
 .foot{max-width:62rem;margin:0 auto;padding:0 1.5rem 2rem;font-size:.9rem}
 .foot a{color:var(--muted)}
 #view-upload .actions{margin-top:.75rem}
+.up-row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin:.75rem 0}
+/* Download the app button in the header: rounded rectangle, stands out as a call to action */
+.app-dl{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.app-dl:hover{opacity:.9;border-color:var(--accent)}
 
 .attrib{margin:.75rem 0 0;color:var(--muted);font-size:.85rem}
 .attrib a{color:inherit}
@@ -552,6 +556,7 @@ body{touch-action:manipulation}
     <button id="theme-toggle" class="icon-btn" aria-label="Switch between light and dark theme">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/></svg>
     </button>
+    <a id="dl-app" class="btn app-dl" href="#" aria-label="Download the TypeSprint app">Download the app</a>
   </div>
 </header>
 
@@ -603,8 +608,11 @@ body{touch-action:manipulation}
     <div id="up-panel">
       <div class="panel">
         <h2>New texts</h2>
-        <p class="muted">Choose a .txt file or paste texts below. A single plain paragraph works too.</p>
-        <input id="file-pick" type="file" accept=".txt,text/plain" aria-label="Choose a .txt file">
+        <p class="muted">Upload a .txt file, or paste texts below (one plain paragraph also works). Uploaded texts appear in the Reading nook for everyone.</p>
+        <div class="up-row">
+          <input id="file-pick" type="file" accept=".txt,text/plain" aria-label="Choose a .txt file">
+          <button id="upload-file" class="btn">Upload file</button>
+        </div>
         <textarea id="paste" class="paste" rows="9" aria-label="Paste texts" placeholder="title: Rainy Afternoon&#10;difficulty: easy&#10;category: stories&#10;---&#10;Your passage goes here.&#10;&#10;===&#10;&#10;(next passage...)"></textarea>
         <p id="preview" class="msg" role="status"></p>
         <div class="actions"><button id="upload-btn" class="btn primary" disabled>Upload</button></div>
@@ -1164,6 +1172,25 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   // Closes the appearance popover.
   function closeTheme() { themeMenu.hidden = true; palBtn.setAttribute("aria-expanded", "false"); }
   $("#theme-toggle").addEventListener("click", () => setMode(root.dataset.theme === "dark" ? "light" : "dark"));
+  // "Download the app": TypeSprint is a single-file web app, so this saves
+  // index.html as "TypeSprint.html" so it can be run offline or re-uploaded elsewhere.
+  $("#dl-app").addEventListener("click", async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("index.html", { cache: "no-store" });
+      if (!res.ok) throw new Error("not available");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "TypeSprint.html";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("TypeSprint is a web app — there is no separate app file. Open this page in your browser and choose “Add to Home Screen” to install it on your phone.");
+    }
+  });
   palBtn.addEventListener("click", () => (themeMenu.hidden ? openTheme() : closeTheme()));
   themeMenu.addEventListener("click", (e) => {
     const m = e.target.closest("[data-mode]"), p = e.target.closest("[data-pal]");
@@ -3183,6 +3210,20 @@ Rules:
   $("#file-pick").addEventListener("change", async (e) => {
     const f = e.target.files[0]; if (!f) return;
     $("#paste").value = await f.text(); refreshPreview(); e.target.value = "";
+  });
+  // Explicit "Upload file" action next to the file chooser: read the file and
+  // queue its texts for upload (admin can then press Upload to send them).
+  $("#upload-file").addEventListener("click", async () => {
+    const f = $("#file-pick").files[0];
+    if (!f) return say("#up-msg", "Choose a .txt file first.", true);
+    say("#up-msg", "Reading file…");
+    try {
+      $("#paste").value = await f.text();
+      refreshPreview();
+      $("#file-pick").value = "";
+    } catch {
+      say("#up-msg", "Couldn't read that file.", true);
+    }
   });
   $("#upload-btn").addEventListener("click", async () => {
     say("#up-msg", "Uploading…");
