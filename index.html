@@ -1366,6 +1366,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (current === "learn") openLearn();
     if (current === "lesson") openLesson();
     if (current === "history") renderHistory();
+    if (current === "guess") startGuess();
     $("#runs-fab").setAttribute("aria-current", current === "history" ? "page" : "false");
     const area = isType() ? "practice" : current === "games" || GAMES.includes(current) ? "games" : current === "leaderboard" ? "leaderboard" : current === "learn" || current === "lesson" ? "learn" : "";
     $$(".tabs a").forEach((a) => a.setAttribute("aria-current", a.getAttribute("href") === "#" + area ? "page" : "false"));
