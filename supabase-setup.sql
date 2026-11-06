@@ -282,3 +282,21 @@ on conflict (username) do nothing;
 --   update public.players set pass_hash = extensions.crypt('NEW PASSWORD', extensions.gen_salt('bf')), session_hash = null
 --   where username = 'admin';
 -- To remove someone: delete from public.players where username = 'their_name';
+
+-- 10) App file bucket: admin uploads the app/file, everyone can download it --
+-- The top-right “Download the app” button serves the object at path "TypeSprint-App".
+-- Uploading to the same path with upsert replaces the previous file.
+insert into storage.buckets (id, name, public) values ('app_files', 'app_files', true)
+on conflict (id) do nothing;
+
+drop policy if exists "app files public read" on storage.objects;
+create policy "app files public read" on storage.objects
+  for select to anon, authenticated using (bucket_id = 'app_files');
+
+drop policy if exists "app files upload" on storage.objects;
+create policy "app files upload" on storage.objects
+  for insert to anon, authenticated with check (bucket_id = 'app_files');
+
+drop policy if exists "app files delete" on storage.objects;
+create policy "app files delete" on storage.objects
+  for delete to anon, authenticated using (bucket_id = 'app_files');
