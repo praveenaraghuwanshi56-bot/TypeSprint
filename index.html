@@ -2391,8 +2391,8 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   eStage.addEventListener("click", () => eIn.focus());
   $("#start-emoji").addEventListener("click", startEmoji);
 
-  /* ---------- Word Guess: guess a word from a hint, 3 attempts ---------- */
-  // Word Guess: 3 attempts to guess a word from a hint. Color-coded feedback
+  /* ---------- Word Guess: guess a word from a hint, 4 tries, one word per round ---------- */
+  // Word Guess: 4 tries to guess one word from progressive hints. Color-coded feedback
   // (green = right letter right place, yellow = right letter wrong place).
   // Words come from Datamuse, filtered by difficulty and suitability for 5-6 graders.
   const gIn = $("#guess-input");
@@ -2400,40 +2400,41 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   const gGuessOverlay = $("#g-overlay");
   const GUESS_WORD_HINTS = {
     easy: [
-      { w: "cat", h: "A small furry pet that says meow" },
-      { w: "dog", h: "A furry pet that says woof and wags its tail" },
-      { w: "sun", h: "The bright star in the sky during the day" },
-      { w: "moon", h: "Shines in the sky at night" },
-      { w: "tree", h: "Grows outdoors with leaves and branches" },
-      { w: "fish", h: "Lives in water and swims with fins" },
-      { w: "bird", h: "Has feathers, wings and can fly" },
-      { w: "book", h: "You read pages of words in it" },
-      { w: "cup", h: "You drink water or juice from it" },
-      { w: "bed", h: "You sleep on it at night" }
+      { w: "cat", hints: ["A small furry pet that says meow", "It has whiskers and purrs", "It chases mice", "It is a common house pet"] },
+      { w: "dog", hints: ["A furry pet that says woof", "It wags its tail when happy", "It is known as man's best friend", "It barks"] },
+      { w: "sun", hints: ["The bright star in the sky during the day", "It gives us light and warmth", "It rises in the morning", "The Earth revolves around it"] },
+      { w: "moon", hints: ["Shines in the sky at night", "It orbits the Earth", "It changes shape from full to crescent", "Earth's natural satellite"] },
+      { w: "tree", hints: ["Grows outdoors with leaves and branches", "It has a trunk and roots", "It produces oxygen for us", "Birds build nests in it"] },
+      { w: "fish", hints: ["Lives in water and swims with fins", "It has scales and gills", "You can keep it in a bowl", "It swims in the ocean"] },
+      { w: "bird", hints: ["Has feathers, wings and can fly", "It builds nests in trees", "It lays eggs", "It sings in the morning"] },
+      { w: "book", hints: ["You read pages of words in it", "It has a cover and many pages", "It teaches you new things", "You find it in a library"] },
+      { w: "cup", hints: ["You drink water or juice from it", "It has a handle on one side", "It can hold hot or cold drinks", "You wash it after using"] },
+      { w: "bed", hints: ["You sleep on it at night", "It has a mattress and a pillow", "You rest your head on it", "It is found in a bedroom"] }
     ],
     medium: [
-      { w: "apple", h: "A red or green crunchy fruit" },
-      { w: "water", h: "You drink it to stay alive" },
-      { w: "music", h: "Songs you listen to with your ears" },
-      { w: "school", h: "A place where children learn" },
-      { w: "happy", h: "A feeling of joy or smiling" },
-      { w: "table", h: "Has legs and you put things on top" },
-      { w: "cloud", h: "White fluffy thing in the sky" },
-      { w: "bread", h: "You make sandwiches with it" },
-      { w: "green", h: "A color like grass or leaves" },
-      { w: "house", h: "Where a family lives" }
+      { w: "apple", hints: ["A red or green crunchy fruit", "It grows on trees", "Newton discovered gravity because of it", "A teacher's favorite gift"] },
+      { w: "water", hints: ["You drink it to stay alive", "It covers most of the Earth", "It freezes into ice at zero degrees", "It flows in rivers and oceans"] },
+      { w: "music", hints: ["Songs you listen to with your ears", "It can be played with instruments", "It has rhythm and melody", "It makes you want to dance"] },
+      { w: "school", hints: ["It is a place that is present in every country", "People of all ages go there", "Children learn reading and writing there", "It has classrooms and teachers"] },
+      { w: "happy", hints: ["A feeling of joy or smiling", "You feel it when something good happens", "It is the opposite of sad", "You laugh when you feel it"] },
+      { w: "table", hints: ["Has legs and you put things on top", "You eat your meals on it", "It is made of wood or metal", "It stands in a dining room"] },
+      { w: "cloud", hints: ["White fluffy thing in the sky", "It is made of tiny water drops", "It brings rain when it gets dark", "It floats high above the ground"] },
+      { w: "bread", hints: ["You make sandwiches with it", "It is baked in an oven", "You can spread butter on it", "It is a staple food in many homes"] },
+      { w: "green", hints: ["A color like grass or leaves", "It is the color of nature", "It is a primary color of light", "Trains go when the light is this color"] },
+      { w: "house", hints: ["A building where a family lives", "It has rooms, windows and doors", "It protects us from rain and cold", "People sleep in beds inside it"] }
     ],
     hard: [
-      { w: "garden", h: "A place where flowers and vegetables grow" },
-      { w: "summer", h: "The hottest season of the year" },
-      { w: "window", h: "In a wall, lets you see outside" },
-      { w: "friend", h: "Someone you like to play with" },
-      { w: "pencil", h: "You write or draw with it" },
-      { w: "dragon", h: "A make-believe animal that breathes fire" },
-      { w: "jungle", h: "A place with many trees and wild animals" },
-      { w: "pocket", h: "A small bag sewn into clothes" },
-      { w: "rabbit", h: "A small animal with long ears that hops" },
-      { w: "butter", h: "A yellow spread you put on bread" }
+      { w: "classroom", hints: ["It is a place that is present in every country", "People of all ages go there", "Children learn reading and writing there", "It has desks, chairs and a blackboard"] },
+      { w: "garden", hints: ["A place where flowers and vegetables grow", "It has plants, soil and sunshine", "You can plant seeds there", "Bees and butterflies visit it"] },
+      { w: "summer", hints: ["The hottest season of the year", "Schools are closed during it", "People go to the beach then", "It comes after spring"] },
+      { w: "window", hints: ["In a wall, lets you see outside", "It lets fresh air into a room", "It is made of glass", "You can open and close it"] },
+      { w: "friend", hints: ["Someone you like to play with", "They share their toys with you", "They make you laugh when you are sad", "You trust them with your secrets"] },
+      { w: "pencil", hints: ["You write or draw with it", "It has a graphite core inside wood", "You can erase mistakes with it", "It needs sharpening when dull"] },
+      { w: "dragon", hints: ["A make-believe animal that breathes fire", "It has wings and scales", "It lives in stories and fairy tales", "It guards a treasure in a cave"] },
+      { w: "jungle", hints: ["A place with many trees and wild animals", "It is hot and rainy there", "Lions and monkeys live there", "It is a thick forest with vines"] },
+      { w: "pocket", hints: ["A small bag sewn into clothes", "You can put coins in it", "It is on your pants or jacket", "You keep small things in it"] },
+      { w: "rabbit", hints: ["A small animal with long ears that hops", "It eats carrots and lettuce", "It has a fluffy cotton tail", "It lives in a burrow underground"] },
+      { w: "butter", hints: ["A yellow spread you put on bread", "It is made from milk or cream", "It melts when it gets warm", "You spread it with a knife"] }
     ]
   };
 
@@ -2462,13 +2463,15 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   }
 
   // Word Guess state
-  const GW = { on: false, word: "", hint: "", difficulty: "easy", attempts: [], cur: "", over: false, busy: false, score: 0, best: 0, started: 0 };
+  const GW = { on: false, word: "", hints: [], hintIndex: 0, difficulty: "easy", attempts: [], cur: "", over: false, busy: false, score: 0, best: 0, started: 0 };
 
   // Picks a random word-hint pair for the current difficulty.
   function pickGuessWord() {
     const list = GUESS_WORD_HINTS[GW.difficulty];
     const p = pick(list);
-    GW.word = p.w; GW.hint = p.h;
+    GW.word = p.w;
+    GW.hints = p.hints;
+    GW.hintIndex = 0;
   }
 
   // Draws the difficulty selector overlay.
@@ -2484,11 +2487,11 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     document.getElementById("g-stage").classList.replace("overlay-closed", "overlay-open");
   }
 
-  // Renders the 3x5 tile board with current guesses.
+  // Renders the 4xN tile board with current guesses (one word per round, 4 tries).
   function guessRenderBoard() {
     const len = GW.word.length;
     gBoard.style.setProperty("--cols", len);
-    gBoard.innerHTML = Array.from({ length: 3 }, (_, r) => {
+    gBoard.innerHTML = Array.from({ length: 4 }, (_, r) => {
       const attempt = GW.attempts[r] || "";
       return `<div class="grow">${Array.from({ length: len }, (_, i) => `<div class="gtile">${attempt[i] || ""}</div>`).join("")}</div>`;
     }).join("");
@@ -2499,7 +2502,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
         marks.forEach((m, i) => { tiles[i].className = "gtile " + m; });
       }
     });
-    if (!GW.over && GW.attempts.length < 3) {
+    if (!GW.over && GW.attempts.length < 4) {
       const curRow = gBoard.children[GW.attempts.length];
       for (let i = 0; i < GW.cur.length; i++) curRow.children[i].textContent = GW.cur[i];
     }
@@ -2516,19 +2519,19 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   // Starts a new Word Guess game (after difficulty chosen).
   async function startGuess() {
     GW.on = true; GW.over = false; GW.busy = false; GW.attempts = []; GW.cur = "";
-    GW.score = 0; GW.started = performance.now();
+    GW.hintIndex = 0; GW.score = 0; GW.started = performance.now();
     gGuessOverlay.hidden = true;
     document.getElementById("g-stage").classList.replace("overlay-open", "overlay-closed");
     gIn.value = ""; gIn.focus();
     await fetchGuessWords(GW.difficulty);
     pickGuessWord();
-    $("#guess-hint").textContent = `Hint: ${GW.hint}`;
+    $("#guess-hint").textContent = `Hint: ${GW.hints[GW.hintIndex]}`;
     guessRenderBoard(); gStats();
   }
 
   // Updates the attempt counter and status.
   function gStats() {
-    setText($("#guess-attempt"), `${GW.attempts.length}/3`);
+    setText($("#guess-attempt"), `${GW.attempts.length}/4`);
     setText($("#guess-wordlen"), GW.word.length);
   }
 
@@ -2540,7 +2543,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (/^[a-z]$/.test(k) && GW.cur.length < GW.word.length) { GW.cur += k; guessRenderBoard(); }
   }
 
-  // Submits the current guess.
+  // Submits the current guess. One word per round, 4 tries max.
   async function gSubmit() {
     if (GW.cur.length !== GW.word.length) { gMsg("Not enough letters", "bad"); return; }
     if (!(await wValid(GW.cur))) { gMsg("Not a real word", "bad"); return; }
@@ -2548,11 +2551,17 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     const marks = gScore(GW.cur, GW.word);
     GW.attempts.push(GW.cur);
     const correct = GW.cur === GW.word;
-    GW.score += correct ? (3 - GW.attempts.length) * 10 : 0;
+    GW.score += correct ? (4 - GW.attempts.length) * 10 : 0;
     gStats(); guessRenderBoard();
     if (correct) { GW.over = true; gMsg(`You got it! +${GW.score}`, "good"); endGuess(true); return; }
-    if (GW.attempts.length >= 3) { GW.over = true; gMsg(`It was ${GW.word.toUpperCase()}`, "bad"); endGuess(false); return; }
-    gMsg("Try again!", "neutral");
+    if (GW.attempts.length >= 4) { GW.over = true; gMsg(`It was ${GW.word.toUpperCase()}`, "bad"); endGuess(false); return; }
+    // Reveal next hint after wrong guess
+    if (GW.hintIndex < GW.hints.length - 1) {
+      GW.hintIndex++;
+      gMsg(`Not quite. Another hint: ${GW.hints[GW.hintIndex]}`, "neutral");
+    } else {
+      gMsg("Not quite. Try again!", "neutral");
+    }
     GW.busy = false; GW.cur = ""; guessRenderBoard();
   }
 
@@ -2570,7 +2579,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
       wpm: secs > 1 ? Math.round(GW.word.length / 5 / (secs / 60)) : 0, scale: 1,
       accuracy: 100, errors: GW.attempts.length - (win ? 1 : 0), duration_seconds: secs,
       score: GW.score, best_streak: GW.best,
-      extra: [["Difficulty", GW.difficulty], ["Score", GW.score], ["Best", GW.best], ["Word", GW.word.toUpperCase()]]
+      extra: [["Difficulty", GW.difficulty], ["Score", GW.score], ["Best", GW.best], ["Word", GW.word.toUpperCase()], ["Tries used", GW.attempts.length]]
     });
   }
 
