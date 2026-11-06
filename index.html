@@ -1366,7 +1366,6 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (current === "learn") openLearn();
     if (current === "lesson") openLesson();
     if (current === "history") renderHistory();
-    if (current === "guess") startGuess();
     $("#runs-fab").setAttribute("aria-current", current === "history" ? "page" : "false");
     const area = isType() ? "practice" : current === "games" || GAMES.includes(current) ? "games" : current === "leaderboard" ? "leaderboard" : current === "learn" || current === "lesson" ? "learn" : "";
     $$(".tabs a").forEach((a) => a.setAttribute("aria-current", a.getAttribute("href") === "#" + area ? "page" : "false"));
@@ -2497,7 +2496,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   // Starts a Word Guess game with one word and 4 tries.
   function startGuess() {
     beginRun(); stopGuess();
-    Object.assign(GW, { on: true, tries: [], cur: "", score: 0, streak: 0, best: 0, start: performance.now() });
+    Object.assign(GW, { on: true, phase: "type", tries: [], cur: "", score: 0, streak: 0, best: 0, start: performance.now() });
     pickGuessWord();
     wgOverlay.hidden = true; gIn.value = ""; gIn.focus(); guessStats(); guessRender();
   }
