@@ -1266,7 +1266,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   let practiceMode = "classic";
   // The router: reads location.hash, shows exactly one <section> in <main>, stops running games, and starts
   // the page's setup (resetTest, wordleOpen, openLeaderboard, ...).
-  function route() {
+  async function route() {
     let name = (location.hash || "#home").slice(1);
     if (name === "practice") name = practiceMode;
     if (name === "upload" && !(auth && auth.is_admin)) name = "home";     // the upload page is for the admin account only
@@ -1279,7 +1279,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (current !== "wordle") { const wi = $("#wordle-input"); if (wi) wi.blur(); }
     if (current !== "lesson") { const li = $("#lesson-input"); if (li) li.blur(); }
     if (current === "upload") renderUpload();
-    if (current === "wordle") wordleOpen();
+    if (current === "wordle") await wordleOpen();
     if (current === "leaderboard") openLeaderboard();
     if (current === "learn") openLearn();
     if (current === "lesson") openLesson();
@@ -1298,9 +1298,9 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   }
   addEventListener("hashchange", route);
   // Restarts whatever mode is on screen (also bound to Tab then Enter).
-  const restart = () => {
+  const restart = async () => {
     if (isType()) resetTest(); else if (current === "balloons") startBalloons(); else if (current === "blink") startBlink();
-    else if (current === "cafe") startCafe(); else if (current === "gap") startGap(); else if (current === "wordle") wordleOpen();
+    else if (current === "cafe") startCafe(); else if (current === "gap") startGap(); else if (current === "wordle") await wordleOpen();
     else if (current === "scramble") startScramble(); else if (current === "emoji") startEmoji();
   };
   $("#practice-mode").addEventListener("click", (e) => { const b = e.target.closest("[data-m]"); if (b) location.hash = "#" + b.dataset.m; });
@@ -1929,9 +1929,8 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   $("#start-gap").addEventListener("click", startGap);
 
   /* ---------- Wordle ---------- */
-  // Answers come from this curated list (grouped by length automatically). Guesses are checked against it, your themed word pool, then Datamuse.
-  // Curated answer words (4, 5 and 6 letters, grouped by length at runtime). Guesses are also accepted if
-  // Datamuse knows the word.
+  // Curated answer words (4, 5 and 6 letters, grouped by length at runtime). Used as a fallback when Datamuse is unavailable.
+  // Guesses are checked against Datamuse first, then this list, then your themed word pool.
   const WORDLE_WORDS = ("bake bear bell bird boat book bowl cake calm camp card cart cave city clay coat cozy crew dark dawn deep deer door dove dust farm fern fire fish flag flow foam fork frog gate gift glow goat gold hall hand hill home hope iron jade kind kite lake lamp leaf lime lion loaf moon moss nest note oven pack page park path pear pine pond rain rice ring road rock rose sail salt sand seed ship sing snow soap soft soup star stay tale tall tent tide time tree vase wave wind wing wolf wood wool yarn yard zero zone " +
     "alarm angel apple baker beach bench berry blank bloom board bread brick brook brush bunny cabin candy cargo chair chalk charm cheer chess clean clock cloud coast cocoa coral cover cream crisp crown crumb daisy dairy dance dough dream drink eagle earth ember fairy feast fence field flame flour fluff flute fresh fruit glass globe grace grain grape grass green happy hazel heart honey horse house ivory jelly juice lemon light lilac lunch magic mango maple melon metal mocha mouse music night novel ocean olive paint paper pasta peace peach pearl piano plant plate porch puppy quiet quilt rainy raven relax river robin roast round salad scarf shade sheep shelf shell shore sleep smile snack snowy spice spoon stamp stone storm stove story straw study sugar sunny sweet swing table teddy thyme tiger toast tower trail train tulip water wheat whale world yacht young zebra " +
     "anchor autumn bakery basket breeze bridge butter button candle carpet castle cheese cherry circle cookie cotton cuddle dinner dragon engine fabric flower forest garden gentle ginger golden guitar hammer harbor hollow island jacket jungle kettle kitten ladder market meadow mellow mirror mitten muffin nectar orange orchid palace parade pastry pebble pepper pickle pillow planet pocket potato pretty puzzle rabbit ribbon rocket saddle salmon school shadow silver simple simmer sleepy spirit spring stream summer sunset thread ticket toasty tomato tunnel turkey valley velvet violin walnut warmth window winter wisdom wonder wooden yellow zipper").split(" ");
@@ -1959,13 +1958,33 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     clearTimeout(W.tt); wToast.textContent = msg; wToast.classList.toggle("show", !!msg);
     if (msg && !keep) W.tt = setTimeout(() => wToast.classList.remove("show"), 1500);
   }
+  // Fetch a random Wordle answer word of the given length from Datamuse.
+  // Filters out offensive words and non-alphabetic entries. Returns null when Datamuse is unavailable.
+  async function fetchWordleAnswer(len) {
+    try {
+      const r = await fetch(`https://api.datamuse.com/words?max=400&md=f`);
+      if (!r.ok) throw new Error("datamuse failed");
+      const words = await r.json();
+      const valid = words
+        .map((x) => x.word)
+        .filter((w) => /^[a-z]+$/.test(w) && w.length === len && !BAD_SUB.test(w) && !BAD_WORDS.has(w));
+      if (valid.length > 0) return pick(valid);
+    } catch {}
+    return null;
+  }
+
   // Starts a new Wordle word (also called when the page opens or the length changes).
-  function wordleOpen() {
+  // The answer is drawn from Datamuse, falling back to the curated WORDLE_WORDS list.
+  async function wordleOpen() {
     beginRun();
     $$("#wordle-len button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.n === W.len)));
     clearInterval(W.timer);
-    const pool = [...new Set(WORDLE_WORDS.filter((w) => w.length === W.len))];
-    Object.assign(W, { answer: pick(pool), guesses: [], cur: "", over: false, busy: false, start: 0, secs: 0, timer: 0 });
+    let answer = await fetchWordleAnswer(W.len);
+    if (!answer) {
+      const pool = [...new Set(WORDLE_WORDS.filter((w) => w.length === W.len))];
+      answer = pick(pool);
+    }
+    Object.assign(W, { answer, guesses: [], cur: "", over: false, busy: false, start: 0, secs: 0, timer: 0 });
     wBoard.style.setProperty("--cols", W.len);
     wBoard.innerHTML = Array.from({ length: 6 }, () => `<div class="wrow">${'<div class="tile"></div>'.repeat(W.len)}</div>`).join("");
     const rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
