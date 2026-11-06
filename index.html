@@ -2434,7 +2434,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     ]
   };
 
-  // Fetches extra words from Datamuse, gets real definitions from Free Dictionary API as hints.
+  // Fetches extra words from Datamuse, gets real hints from Wikipedia + Free Dictionary APIs (no sign-in needed).
   async function fetchGuessWords(difficulty) {
     const maxLen = { easy: 5, medium: 6, hard: 9 }[difficulty];
     const minLen = { easy: 3, medium: 4, hard: 5 }[difficulty];
@@ -2445,26 +2445,38 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
         const r = await fetch(`https://api.datamuse.com/words?ml=${encodeURIComponent(concept)}&max=50&md=f`);
         if (!r.ok) return;
         const words = await r.json();
-        let dictCalls = 0;
+        let wikiCalls = 0;
         for (const x of words) {
           const w = x.word;
           if (/^[a-z]+$/.test(w) && w.length >= minLen && w.length <= maxLen && !BAD_SUB.test(w) && !BAD_WORDS.has(w)) {
-            // Try to get a real definition from Free Dictionary API
-            let defHint = null;
-            if (dictCalls < 8) {
-              dictCalls++;
+            // Try Wikipedia summary first for a real, readable hint
+            let hint = null;
+            if (wikiCalls < 8) {
+              wikiCalls++;
+              try {
+                const wr = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(w)}`);
+                if (wr.ok) {
+                  const wd = await wr.json();
+                  if (wd.extract) {
+                    hint = wd.extract;
+                  }
+                }
+              } catch {}
+            }
+            // Fallback to Free Dictionary API
+            if (!hint) {
               try {
                 const dr = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${w}`);
                 if (dr.ok) {
                   const d = await dr.json();
                   if (d[0] && d[0].meanings && d[0].meanings[0] && d[0].meanings[0].definitions[0]) {
-                    defHint = d[0].meanings[0].definitions[0].definition;
+                    hint = d[0].meanings[0].definitions[0].definition;
                   }
                 }
               } catch {}
             }
             fetched.push({ w, hints: [
-              defHint || `A word related to "${concept}"`,
+              hint || `A word related to "${concept}"`,
               `It starts with the letter "${w[0]}"`,
               `It has ${w.length} letters`,
               `It is a common ${difficulty} level word`
