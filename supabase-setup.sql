@@ -71,6 +71,7 @@ create table if not exists public.players (
 );
 alter table public.players add column if not exists avatar_letter text;   -- one character shown in the account icon
 alter table public.players add column if not exists avatar_color text;    -- #rrggbb icon background
+alter table public.players add column if not exists gemini_key text;      -- Gemini API key for Word Guess hints
 alter table public.players enable row level security;
 revoke all on public.players from anon, authenticated;
 
@@ -138,7 +139,7 @@ declare p public.players%rowtype;
 begin
   select * into p from public.players where session_hash is not null and session_hash = public._hash_tok(tok) limit 1;
   if not found then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
-  return jsonb_build_object('ok', true, 'username', p.username, 'is_admin', p.is_admin, 'avatar_letter', p.avatar_letter, 'avatar_color', p.avatar_color);
+  return jsonb_build_object('ok', true, 'username', p.username, 'is_admin', p.is_admin, 'avatar_letter', p.avatar_letter, 'avatar_color', p.avatar_color, 'gemini_key', p.gemini_key);
 end $$;
 
 create or replace function public.logout(tok text) returns jsonb
@@ -215,6 +216,9 @@ begin
   return jsonb_build_object('ok', true, 'avatar_letter', l, 'avatar_color', c);
 end $$;
 
+create or replace function public.set_gemini_key(tok text, key text) returns jsonb
+language plpgsql security definer set search_path = public as $$\ndeclare uid uuid := public._uid(tok); k text := nullif(btrim(coalesce(key, '')), '');\nbegin\n  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;\n  update public.players set gemini_key = k where id = uid;\n  return jsonb_build_object('ok', true, 'gemini_key', k);\nend $$;
+
 -- Needs the password again. Wrong guesses count toward the same 5-try lockout as signing in.
 create or replace function public.delete_account(tok text, pw text) returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -270,7 +274,7 @@ grant execute on function
   public.signup(text, text), public.login(text, text), public.check_session(text), public.logout(text),
   public.save_result(text, jsonb), public.leaderboard(text, text, text, int),
   public.add_tests(text, jsonb), public.delete_test(text, uuid),
-  public.rename_account(text, text), public.set_avatar(text, text, text), public.delete_account(text, text)
+  public.rename_account(text, text), public.set_avatar(text, text, text), public.set_gemini_key(text, text), public.delete_account(text, text)
 to anon, authenticated;
 
 -- 9) The admin account: username "admin" -----------------------------------------

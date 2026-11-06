@@ -728,7 +728,7 @@ body{touch-action:manipulation}
           <button id="save-gemini-key" class="btn primary">Save key</button>
         </div>
         <p id="gemini-key-msg" class="msg" role="status"></p>
-        <p class="keys">The key is stored only in your browser's localStorage and is never sent to anyone except Google's API.</p>
+        <p class="keys">The key is stored in your Supabase account and is never sent to anyone except Google's API.</p>
       </div>
     </div>
   </section>
@@ -2447,9 +2447,9 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     ]
   };
 
-  // Gets the Gemini API key from localStorage (set in the admin panel).
+  // Gets the Gemini API key from the signed-in account (stored in Supabase).
   function getGeminiKey() {
-    try { return localStorage.getItem("ts-gemini-key") || ""; } catch { return ""; }
+    return auth && auth.geminiKey ? auth.geminiKey : "";
   }
 
   // Generates 4 progressive hints for a word using Gemini Flash Lite.
@@ -2748,7 +2748,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     const r = await rpc("check_session", { tok: auth.token });
     if (r.net) return;                       // offline or a server hiccup: stay signed in
     if (!r.ok) return sessionKicked();
-    const next = { ...auth, username: r.data.username, is_admin: r.data.is_admin, letter: r.data.avatar_letter || null, color: r.data.avatar_color || null };
+    const next = { ...auth, username: r.data.username, is_admin: r.data.is_admin, letter: r.data.avatar_letter || null, color: r.data.avatar_color || null, geminiKey: r.data.gemini_key || null };
     if (JSON.stringify(next) !== JSON.stringify(auth)) { const adminChanged = next.is_admin !== auth.is_admin; auth = next; saveSession(); applyAuthUI(true); if (adminChanged) route(); }
   }
   /* ---------- Account menu: avatar, rename, icon, delete ---------- */
@@ -3643,12 +3643,17 @@ Rules:
   $$(".admin-tab").forEach((b) => {
     b.addEventListener("click", () => showAdminTab(b.dataset.tab));
   });
-  // Save Gemini API key.
-  $("#save-gemini-key").addEventListener("click", () => {
+  // Save Gemini API key to Supabase.
+  $("#save-gemini-key").addEventListener("click", async () => {
     const key = $("#gemini-api-key").value.trim();
     if (!key) { $("#gemini-key-msg").textContent = "Please enter a key."; return; }
-    localStorage.setItem("ts-gemini-key", key);
-    $("#gemini-key-msg").textContent = "Key saved.";
+    if (!auth) { $("#gemini-key-msg").textContent = "Sign in first."; return; }
+    $("#gemini-key-msg").textContent = "Saving…";
+    const r = await rpc("set_gemini_key", { tok: auth.token, key });
+    if (!r.ok) { $("#gemini-key-msg").textContent = r.error || "Save failed."; $("#gemini-key-msg").className = "msg bad"; return; }
+    auth.geminiKey = r.data.gemini_key || null;
+    saveSession();
+    $("#gemini-key-msg").textContent = "Key saved to your account.";
     $("#gemini-key-msg").className = "msg good";
   });
   // Lists uploaded texts with Delete buttons (admin).
