@@ -631,7 +631,7 @@ body{touch-action:manipulation}
   <section id="view-guess" hidden>
     <h1 class="home-title">Word Guess</h1>
     <p class="muted">Guess the hidden word from a clue. You have 3 attempts. Letters turn green if they're in the right place, yellow if they're in the word but wrong place.</p>
-    <div class="guess-stage" id="g-stage" class="overlay-open">
+    <div class="guess-stage overlay-open" id="g-stage">
       <div id="g-overlay">
         <h2>Pick a difficulty</h2>
         <p id="guess-diff-label">Difficulty: Easy (3-5 letters)</p>
@@ -1334,7 +1334,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
 
   /* ---------- Router ---------- */
   // Route names for the two typing-practice modes.
-  const PRACTICE = ["classic", "timed"], GAMES = ["balloons", "wordle", "scramble", "emoji", "blink", "cafe", "gap"];
+  const PRACTICE = ["classic", "timed"], GAMES = ["balloons", "wordle", "scramble", "emoji", "guess", "blink", "cafe", "gap"];
   // Every route where keyboard input is game/test input (practice + games).
   const GAME_ROUTES = [...PRACTICE, ...GAMES];   // every page you can play on
   // All valid hash routes (#home, #classic, ...). Unknown hashes fall back to home.
