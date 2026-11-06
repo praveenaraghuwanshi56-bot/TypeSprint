@@ -217,7 +217,14 @@ begin
 end $$;
 
 create or replace function public.set_gemini_key(tok text, key text) returns jsonb
-language plpgsql security definer set search_path = public as $$\ndeclare uid uuid := public._uid(tok); k text := nullif(btrim(coalesce(key, '')), '');\nbegin\n  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;\n  update public.players set gemini_key = k where id = uid;\n  return jsonb_build_object('ok', true, 'gemini_key', k);\nend $$;
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := public._uid(tok); k text := nullif(btrim(coalesce(key, '')), '');
+begin
+  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
+  update public.players set gemini_key = k where id = uid;
+  return jsonb_build_object('ok', true, 'gemini_key', k);
+end $$;
+
 
 -- Needs the password again. Wrong guesses count toward the same 5-try lockout as signing in.
 create or replace function public.delete_account(tok text, pw text) returns jsonb
