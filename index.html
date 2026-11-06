@@ -241,23 +241,16 @@ summary{cursor:pointer;font-weight:600}
 :root[data-theme="dark"]{--absent:#4b433c}
 .card:nth-child(5) .card-emoji{background:var(--b1)}
 
-/* ---------- Word Guess CSS ---------- */
-.guess-stage{position:relative;min-height:22rem;display:grid;place-content:center;gap:.75rem;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;cursor:text}
-#g-overlay{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;text-align:center;padding:2rem;background:color-mix(in srgb,var(--surface) 92%,transparent)}
-#g-overlay h2{margin:0;font-size:1.8rem;letter-spacing:-.02em}
-#g-board-wrap{display:none;flex-direction:column;align-items:center;gap:.75rem;padding:1.5rem;width:100%}
-#g-stage.overlay-closed #g-board-wrap{display:flex}
-#g-stage.overlay-open #g-board-wrap{display:none}
-.guess-hint{margin:.25rem 0 .5rem;font:600 1rem var(--font-ui);color:var(--text)}
-.guess-row{display:flex;gap:.75rem;align-items:center;font-size:.9rem;color:var(--muted)}
-.grow{display:grid;grid-template-columns:repeat(var(--cols,5),1fr);gap:.4rem;max-width:22rem}
-.gtile{width:2.6rem;height:2.6rem;display:grid;place-items:center;border:1px solid var(--line);border-radius:6px;background:var(--bg);font:600 1.25rem var(--font-mono);text-transform:uppercase}
-.gtile.correct{background:var(--ok);color:var(--on-accent);border-color:var(--ok)}
-.gtile.present{background:var(--accent);color:#ffffff;border-color:var(--accent)}
-.gtile.absent{background:var(--surface);color:var(--muted);border-color:var(--line)}
-.guess-msg{min-height:1.5rem;margin:.5rem 0 0;font:600 .9rem var(--font-ui)}
-.guess-msg.good{color:var(--ok)}.guess-msg.bad{color:var(--err)}.guess-msg.neutral{color:var(--accent)}
-@media (max-width:640px){.gtile{width:2.2rem;height:2.2rem;font-size:1rem}}
+/* ---------- Word Guess CSS (shares the Word Scramble / Emoji Rush look) ---------- */
+.guess-clue{margin:0;min-height:1.4em;max-width:28rem;font:600 1.1rem var(--font-ui);color:var(--text)}
+.guess-board{display:grid;gap:.45rem;justify-items:center}
+.guess-row{display:flex;gap:.4rem;justify-content:center}
+.guess-row.shake{animation:wshake .45s}
+.scramble-letter.guess-tile{border-style:dashed;background:var(--surface);box-shadow:none;color:var(--text)}
+.scramble-letter.guess-tile.typed{border-style:solid;border-color:var(--muted);background:var(--bg)}
+.scramble-letter.guess-tile.correct{border-style:solid;background:var(--ok);border-color:var(--ok);color:var(--bg)}
+.scramble-letter.guess-tile.present{border-style:solid;background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.scramble-letter.guess-tile.absent{border-style:solid;background:var(--absent);border-color:var(--absent);color:#f3ecdf}
 .card:nth-child(8) .card-emoji{background:var(--b4)}
 /* ============ Wordle ============ */
 .wordle{display:grid;justify-items:center;gap:.9rem}
@@ -627,30 +620,36 @@ body{touch-action:manipulation}
     </div>
   </section>
 
-  <!-- Word Guess game page. -->
+  <!-- Game: Word Guess. -->
   <section id="view-guess" hidden>
-    <h1 class="home-title">Word Guess</h1>
-    <p class="muted">Guess the hidden word from a clue. You have 3 attempts. Letters turn green if they're in the right place, yellow if they're in the word but wrong place.</p>
-    <div class="guess-stage overlay-open" id="g-stage">
-      <div id="g-overlay">
-        <h2>Pick a difficulty</h2>
-        <p id="guess-diff-label">Difficulty: Easy (3-5 letters)</p>
-        <div class="seg" id="guess-diffs">
+    <a class="back" href="#games">← All games</a>
+    <dl class="stats">
+      <div><dt>Score</dt><dd id="wg-score">0</dd></div>
+      <div><dt>Streak</dt><dd id="wg-streak">0</dd></div>
+      <div><dt>Lives</dt><dd id="wg-lives" aria-label="Lives left">♥ ♥ ♥</dd></div>
+      <div><dt>Round</dt><dd id="wg-round">0</dd></div>
+    </dl>
+    <div class="scramble-stage" id="wg-stage">
+      <div class="overlay" id="wg-overlay">
+        <h2>Word Guess</h2>
+        <p>Read the clue and type the hidden word. You get 3 tries per word: green means right spot, orange means wrong spot. Three missed words end the game.</p>
+        <div class="seg" id="wg-diffs" role="group" aria-label="Difficulty">
           <button data-d="easy" aria-pressed="true">Easy</button>
-          <button data-d="medium">Medium</button>
-          <button data-d="hard">Hard</button>
+          <button data-d="medium" aria-pressed="false">Medium</button>
+          <button data-d="hard" aria-pressed="false">Hard</button>
         </div>
-        <div class="actions"><button id="guess-start" class="btn primary">Start game</button></div>
+        <p class="word-src muted" id="wg-diff-label">Easy: 3 to 5 letters</p>
+        <button id="start-guess" class="btn primary">Start game</button>
       </div>
-      <div id="g-board-wrap">
-        <p id="guess-hint" class="guess-hint"></p>
-        <div class="guess-row" id="guess-stats"><span id="guess-attempt">0/3</span> attempts &nbsp;|&nbsp; <span id="guess-wordlen">5</span> letters</div>
-        <div id="guess-board" class="grow"></div>
-        <p id="guess-msg" class="guess-msg"></p>
-        <input id="guess-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type your guess" autocomplete="off" autocapitalize="off" autocorrect="false" spellcheck="false">
-        <div class="actions"><button id="guess-new" class="btn">New word</button></div>
-        <a class="back" href="#games">← All games</a>
-      </div>
+      <p class="guess-clue" id="wg-clue"></p>
+      <div class="guess-board" id="wg-board" aria-live="polite"></div>
+      <p class="scramble-hint" id="wg-tries"></p>
+      <p class="scramble-msg" id="wg-msg" role="status"></p>
+    </div>
+    <input id="guess-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type your guess" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="actions">
+      <button id="restart-guess" class="btn">Restart</button>
+      <p class="keys">Press <kbd>Enter</kbd> to guess &nbsp;·&nbsp; <kbd>Tab</kbd> then <kbd>Enter</kbd> restarts the game</p>
     </div>
   </section>
 
@@ -1355,7 +1354,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     current = ROUTES.includes(name) ? name : "home";
     if (isType()) practiceMode = current;
     blurTypingInputs();
-    stopBalloons(); stopBlink(); stopCafe(); stopGap(); stopScramble(); stopEmoji(); clearInterval(T.timer); clearInterval(W.timer); stopLesson(); stopRhythm();
+    stopBalloons(); stopBlink(); stopCafe(); stopGap(); stopScramble(); stopEmoji(); stopGuess(); clearInterval(T.timer); clearInterval(W.timer); stopLesson(); stopRhythm();
     const view = { home: "home", games: "games", upload: "upload", admin: "admin", balloons: "balloon", blink: "blink", cafe: "cafe", gap: "gap", wordle: "wordle", scramble: "scramble", emoji: "emoji", guess: "guess", leaderboard: "leaderboard", learn: "learn", lesson: "lesson", history: "history" };
     $$("main > section").forEach((s) => { s.hidden = s.id !== "view-" + (isType() ? "type" : view[current]); });
     if (current !== "wordle") { const wi = $("#wordle-input"); if (wi) wi.blur(); }
@@ -1363,7 +1362,6 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (current === "upload") renderUpload();
     if (current === "admin") renderAdmin();
     if (current === "wordle") await wordleOpen();
-    if (current === "guess") startGuess();
     if (current === "leaderboard") openLeaderboard();
     if (current === "learn") openLearn();
     if (current === "lesson") openLesson();
@@ -2391,13 +2389,11 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   eStage.addEventListener("click", () => eIn.focus());
   $("#start-emoji").addEventListener("click", startEmoji);
 
-  /* ---------- Word Guess: guess a word from a hint, 4 tries, one word per round ---------- */
+  /* ---------- Word Guess: guess a word from a hint, 4 tries ---------- */
   // Word Guess: 4 tries to guess one word from progressive hints. Color-coded feedback
   // (green = right letter right place, yellow = right letter wrong place).
+  // One round = one word. After each wrong guess, the next hint is revealed.
   // Words come from Datamuse, filtered by difficulty and suitability for 5-6 graders.
-  const gIn = $("#guess-input");
-  const gBoard = $("#guess-board");
-  const gGuessOverlay = $("#g-overlay");
   const GUESS_WORD_HINTS = {
     easy: [
       { w: "cat", hints: ["A small furry pet that says meow", "It has whiskers and purrs", "It chases mice", "It is a common house pet"] },
@@ -2440,9 +2436,9 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
 
   // Fetches extra words from Datamuse for a difficulty level (falls back to curated list).
   async function fetchGuessWords(difficulty) {
-    const maxLen = { easy: 5, medium: 6, hard: 7 }[difficulty];
+    const maxLen = { easy: 5, medium: 6, hard: 9 }[difficulty];
     const minLen = { easy: 3, medium: 4, hard: 5 }[difficulty];
-    const concepts = { easy: ["dog", "sun", "tree", "book", "fish"], medium: ["apple", "school", "water", "music", "house"], hard: ["garden", "summer", "window", "friend", "jungle"] }[difficulty];
+    const concepts = { easy: ["dog", "sun", "tree", "book", "fish"], medium: ["apple", "school", "water", "music", "house"], hard: ["classroom", "garden", "summer", "window", "friend"] }[difficulty];
     let fetched = [];
     try {
       await Promise.allSettled(concepts.map(async (concept) => {
@@ -2452,7 +2448,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
         for (const x of words) {
           const w = x.word;
           if (/^[a-z]+$/.test(w) && w.length >= minLen && w.length <= maxLen && !BAD_SUB.test(w) && !BAD_WORDS.has(w)) {
-            fetched.push({ w, h: `A word related to "${concept}"` });
+            fetched.push({ w, hints: [`A word related to "${concept}"`, `It starts with the letter "${w[0]}"`, `It has ${w.length} letters`, `It is a common ${difficulty} level word`] });
           }
         }
       }));
@@ -2462,140 +2458,134 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     for (const f of fetched) { if (!seen.has(f.w)) { curated.push(f); seen.add(f.w); } }
   }
 
-  // Word Guess state
-  const GW = { on: false, word: "", hints: [], hintIndex: 0, difficulty: "easy", attempts: [], cur: "", over: false, busy: false, score: 0, best: 0, started: 0 };
-
-  // Picks a random word-hint pair for the current difficulty.
+  // Word Guess state: one word per round, 4 tries, progressive hints.
+  const GW = { on: false, phase: "idle", difficulty: "easy", word: "", hints: [], hintIndex: 0, tries: [], cur: "", score: 0, streak: 0, best: 0, start: 0 };
+  const gIn = $("#guess-input"), wgBoard = $("#wg-board"), wgOverlay = $("#wg-overlay"), wgStage = $("#wg-stage"), wgMsg = $("#wg-msg"), wgClue = $("#wg-clue"), wgTries = $("#wg-tries");
+  const GUESS_DIFFS = { easy: "Easy: 3 to 5 letters", medium: "Medium: 4 to 6 letters", hard: "Hard: 5 to 7 letters" };
+  // Updates the Word Guess stats display.
+  const guessStats = () => { setText($("#wg-score"), GW.score); setText($("#wg-streak"), GW.streak); setText($("#wg-lives"), hearts(4 - GW.tries.length)); setText($("#wg-round"), 1); };
+  // Scores a guess like Wordle: 'correct' | 'present' | 'absent'.
+  function gScore(g, a) {
+    const m = Array(g.length).fill("absent"), left = {};
+    for (let i = 0; i < g.length; i++) { if (g[i] === a[i]) m[i] = "correct"; else left[a[i]] = (left[a[i]] || 0) + 1; }
+    for (let i = 0; i < g.length; i++) if (m[i] !== "correct" && left[g[i]] > 0) { m[i] = "present"; left[g[i]]--; }
+    return m;
+  }
+  // Draws the 4 rows of tiles: finished tries are coloured, the current row shows what is being typed.
+  function guessRender() {
+    const len = GW.word.length;
+    wgBoard.innerHTML = Array.from({ length: 4 }, (_, r) => {
+      const done = GW.tries[r], isCur = !done && r === GW.tries.length && GW.phase !== "idle";
+      const marks = done ? gScore(done, GW.word) : null;
+      return `<div class="guess-row">${Array.from({ length: len }, (_, i) => {
+        const ch = done ? done[i] : isCur ? GW.cur[i] : "";
+        const cls = done ? marks[i] : ch ? "typed" : "";
+        return `<span class="scramble-letter guess-tile${cls ? " " + cls : ""}">${ch ? esc(ch) : ""}</span>`;
+      }).join("")}</div>`;
+    }).join("");
+  }
+  // Fetches extra words for a difficulty (safe to call multiple times).
+  function guessPrefetch(d) { fetchGuessWords(d); }
+  // Stops Word Guess and shows its start overlay.
+  function stopGuess() {
+    clearTimeout(GW.timer);
+    GW.on = false; GW.phase = "idle"; GW.word = "";
+    wgOverlay.hidden = false; wgBoard.innerHTML = ""; wgClue.textContent = ""; wgTries.textContent = "";
+    wgMsg.textContent = ""; wgMsg.className = "scramble-msg"; guessStats();
+  }
+  // Starts a Word Guess game with one word and 4 tries.
+  function startGuess() {
+    beginRun(); stopGuess();
+    Object.assign(GW, { on: true, tries: [], cur: "", score: 0, streak: 0, best: 0, start: performance.now() });
+    pickGuessWord();
+    wgOverlay.hidden = true; gIn.value = ""; gIn.focus(); guessStats(); guessRender();
+  }
+  // Picks a random word and its progressive hints for the current difficulty.
   function pickGuessWord() {
     const list = GUESS_WORD_HINTS[GW.difficulty];
     const p = pick(list);
     GW.word = p.w;
     GW.hints = p.hints;
     GW.hintIndex = 0;
-  }
-
-  // Draws the difficulty selector overlay.
-  function guessOverlay(difficulty) {
-    GW.difficulty = difficulty;
-    $("#guess-hint").textContent = "";
-    $("#guess-msg").textContent = "";
-    $("#guess-msg").className = "guess-msg";
-    const diffs = { easy: "Easy (3-5 letters)", medium: "Medium (4-6 letters)", hard: "Hard (5-7 letters)" };
-    $("#guess-diff-label").textContent = `Difficulty: ${diffs[GW.difficulty]}`;
-    guessRenderBoard();
-    gGuessOverlay.hidden = false;
-    document.getElementById("g-stage").classList.replace("overlay-closed", "overlay-open");
-  }
-
-  // Renders the 4xN tile board with current guesses (one word per round, 4 tries).
-  function guessRenderBoard() {
-    const len = GW.word.length;
-    gBoard.style.setProperty("--cols", len);
-    gBoard.innerHTML = Array.from({ length: 4 }, (_, r) => {
-      const attempt = GW.attempts[r] || "";
-      return `<div class="grow">${Array.from({ length: len }, (_, i) => `<div class="gtile">${attempt[i] || ""}</div>`).join("")}</div>`;
-    }).join("");
-    GW.attempts.forEach((att, r) => {
-      if (att.length === len) {
-        const marks = gScore(att, GW.word);
-        const tiles = gBoard.children[r].children;
-        marks.forEach((m, i) => { tiles[i].className = "gtile " + m; });
-      }
-    });
-    if (!GW.over && GW.attempts.length < 4) {
-      const curRow = gBoard.children[GW.attempts.length];
-      for (let i = 0; i < GW.cur.length; i++) curRow.children[i].textContent = GW.cur[i];
-    }
-  }
-
-  // Scores a guess like Wordle: 'correct' | 'present' | 'absent'.
-  function gScore(guess, answer) {
-    const m = Array(guess.length).fill("absent"), left = {};
-    for (let i = 0; i < guess.length; i++) { if (guess[i] === answer[i]) m[i] = "correct"; else left[answer[i]] = (left[answer[i] || 0] + 1) || 1; }
-    for (let i = 0; i < guess.length; i++) if (m[i] !== "correct" && left[guess[i]] > 0) { m[i] = "present"; left[guess[i]]--; }
-    return m;
-  }
-
-  // Starts a new Word Guess game (after difficulty chosen).
-  async function startGuess() {
-    GW.on = true; GW.over = false; GW.busy = false; GW.attempts = []; GW.cur = "";
-    GW.hintIndex = 0; GW.score = 0; GW.started = performance.now();
-    gGuessOverlay.hidden = true;
-    document.getElementById("g-stage").classList.replace("overlay-open", "overlay-closed");
+    wgClue.textContent = `Clue: ${GW.hints[0]}`;
+    wgTries.textContent = `${GW.word.length} letters · try 1 of 4`;
+    wgMsg.textContent = ""; wgMsg.className = "scramble-msg";
     gIn.value = ""; gIn.focus();
-    await fetchGuessWords(GW.difficulty);
-    pickGuessWord();
-    $("#guess-hint").textContent = `Hint: ${GW.hints[GW.hintIndex]}`;
-    guessRenderBoard(); gStats();
   }
-
-  // Updates the attempt counter and status.
-  function gStats() {
-    setText($("#guess-attempt"), `${GW.attempts.length}/4`);
-    setText($("#guess-wordlen"), GW.word.length);
+  // Shakes the current row and shows a message for an invalid guess.
+  function guessReject(text) {
+    wgMsg.textContent = text; wgMsg.className = "scramble-msg bad";
+    const row = wgBoard.children[GW.tries.length]; if (!row) return;
+    row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake");
   }
-
-  // Handles key input.
-  function gPress(k) {
-    if (GW.over || GW.busy || !GW.on) return;
-    if (k === "enter") return gSubmit();
-    if (k === "back") { GW.cur = GW.cur.slice(0, -1); guessRenderBoard(); return; }
-    if (/^[a-z]$/.test(k) && GW.cur.length < GW.word.length) { GW.cur += k; guessRenderBoard(); }
-  }
-
-  // Submits the current guess. One word per round, 4 tries max.
-  async function gSubmit() {
-    if (GW.cur.length !== GW.word.length) { gMsg("Not enough letters", "bad"); return; }
-    if (!(await wValid(GW.cur))) { gMsg("Not a real word", "bad"); return; }
-    GW.busy = true;
-    const marks = gScore(GW.cur, GW.word);
-    GW.attempts.push(GW.cur);
-    const correct = GW.cur === GW.word;
-    GW.score += correct ? (4 - GW.attempts.length) * 10 : 0;
-    gStats(); guessRenderBoard();
-    if (correct) { GW.over = true; gMsg(`You got it! +${GW.score}`, "good"); endGuess(true); return; }
-    if (GW.attempts.length >= 4) { GW.over = true; gMsg(`It was ${GW.word.toUpperCase()}`, "bad"); endGuess(false); return; }
-    // Reveal next hint after wrong guess
-    if (GW.hintIndex < GW.hints.length - 1) {
-      GW.hintIndex++;
-      gMsg(`Not quite. Another hint: ${GW.hints[GW.hintIndex]}`, "neutral");
+  // Submits the typed guess (Enter). One word per round, 4 tries max.
+  async function guessSubmit() {
+    if (!GW.on || GW.phase !== "type") return;
+    if (GW.cur.length !== GW.word.length) { guessReject("Not enough letters"); return; }
+    GW.phase = "check";
+    const word = GW.word, guess = GW.cur, ok = await wValid(guess);
+    if (!GW.on || GW.word !== word) return;
+    if (!ok) { GW.phase = "type"; guessReject("Not a real word"); return; }
+    GW.tries.push(guess); GW.cur = ""; gIn.value = "";
+    lg("answer", word, guess, guess === word);
+    guessRender(); guessStats();
+    if (guess === word) {
+      GW.phase = "judge";
+      const gained = word.length * 10 + (4 - GW.tries.length) * 10 + Math.min(GW.streak, 10) * 5;
+      GW.score += gained; GW.streak++; GW.best = Math.max(GW.best, GW.streak);
+      wgMsg.textContent = `Nice! +${gained}`; wgMsg.className = "scramble-msg good"; wgTries.textContent = "";
+      GW.timer = setTimeout(() => { GW.on = false; GW.phase = "idle"; endGuess(); }, 900);
+    } else if (GW.tries.length >= 4) {
+      GW.phase = "judge"; GW.streak = 0;
+      wgMsg.textContent = `It was ${word}`; wgMsg.className = "scramble-msg bad"; wgTries.textContent = "";
+      wgStage.classList.add("shake"); setTimeout(() => wgStage.classList.remove("shake"), 200);
+      GW.timer = setTimeout(() => { GW.on = false; GW.phase = "idle"; endGuess(); }, 1400);
     } else {
-      gMsg("Not quite. Try again!", "neutral");
+      GW.phase = "type";
+      // Reveal next hint after wrong guess
+      if (GW.hintIndex < GW.hints.length - 1) {
+        GW.hintIndex++;
+        wgClue.textContent = `Clue: ${GW.hints[GW.hintIndex]}`;
+      }
+      wgTries.textContent = `${word.length} letters · try ${GW.tries.length + 1} of 4`;
+      wgMsg.textContent = "Not quite, try again"; wgMsg.className = "scramble-msg";
     }
-    GW.busy = false; GW.cur = ""; guessRenderBoard();
   }
-
-  function gMsg(text, kind) {
-    const el = $("#guess-msg"); el.textContent = text; el.className = "guess-msg " + kind;
-  }
-
-  // Ends the game and shows results.
-  function endGuess(win) {
-    GW.on = false; GW.busy = false;
-    const secs = (performance.now() - GW.started) / 1000;
-    if (win) GW.best++;
+  // Game over for Word Guess.
+  function endGuess() {
+    GW.on = false; GW.phase = "idle"; clearTimeout(GW.timer);
+    const secs = (performance.now() - GW.start) / 1000;
+    const totalChars = GW.word.length * Math.max(GW.tries.length, 1);
+    const wrongChars = GW.tries.reduce((n, t) => n + gScore(t, GW.word).filter((m) => m !== "correct").length, 0);
     showResults({
       mode: "guess", variant: GW.difficulty, label: `Word Guess (${GW.difficulty})`,
-      wpm: secs > 1 ? Math.round(GW.word.length / 5 / (secs / 60)) : 0, scale: 1,
-      accuracy: 100, errors: GW.attempts.length - (win ? 1 : 0), duration_seconds: secs,
-      score: GW.score, best_streak: GW.best,
-      extra: [["Difficulty", GW.difficulty], ["Score", GW.score], ["Best", GW.best], ["Word", GW.word.toUpperCase()], ["Tries used", GW.attempts.length]]
+      wpm: secs > 1 ? Math.round(GW.word.length / 5 / (secs / 60)) : 0, scale: 3,
+      accuracy: totalChars ? Math.round(((totalChars - wrongChars) / totalChars) * 100) : 100,
+      errors: wrongChars, duration_seconds: secs, score: GW.score, best_streak: GW.best,
+      extra: [["Difficulty", GW.difficulty], ["Score", GW.score], ["Best streak", GW.best], ["Tries used", GW.tries.length]]
     });
   }
-
-  // Physical keyboard input for Word Guess.
+  // Typing: letters fill the current row; Enter submits.
   gIn.addEventListener("input", () => {
-    if (!GW.on) { gIn.value = ""; return; }
+    if (!GW.on || GW.phase !== "type") { gIn.value = ""; return; }
     const v = gIn.value.toLowerCase().replace(/[^a-z]/g, "").slice(0, GW.word.length);
-    gIn.value = v; GW.cur = v; guessRenderBoard();
+    gIn.value = v; GW.cur = v; guessRender();
   });
-
-  gBoard.addEventListener("click", () => gIn.focus());
-  $("#guess-new").addEventListener("click", () => guessOverlay(GW.difficulty));
-  $("[data-d=easy]").addEventListener("click", () => guessOverlay("easy"));
-  $("[data-d=medium]").addEventListener("click", () => guessOverlay("medium"));
-  $("[data-d=hard]").addEventListener("click", () => guessOverlay("hard"));
-  $("#guess-start").addEventListener("click", startGuess);
+  gIn.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || Date.now() - tabAt < 2000) return;
+    e.preventDefault(); guessSubmit();
+  });
+  wgStage.addEventListener("click", () => { if (GW.on) gIn.focus(); });
+  $("#start-guess").addEventListener("click", startGuess);
+  $("#restart-guess").addEventListener("click", () => restart());
+  // Difficulty picker on the start screen.
+  $("#wg-diffs").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-d]"); if (!b) return;
+    GW.difficulty = b.dataset.d;
+    $$("#wg-diffs button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    setText($("#wg-diff-label"), GUESS_DIFFS[GW.difficulty]);
+    guessPrefetch(GW.difficulty);
+  });
 
   /* ---------- Reading nook: slide-in side panel on the left ---------- */
   // The Practice section (holds the sliding Reading nook).
@@ -3453,6 +3443,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     else if (current === "gap" && !GP.on) { stopGap(); }
     else if (current === "scramble" && !SC.on) { stopScramble(); }
     else if (current === "emoji" && !EM.on) { stopEmoji(); }
+    else if (current === "guess" && !GW.on) { stopGuess(); }
     else if (isType()) input.focus();
     updateMobileKbd();
   });
@@ -3463,7 +3454,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   document.addEventListener("keydown", (e) => {
     if (dlg.open || !GAME_ROUTES.includes(current) || current === "wordle") return;
     const a = document.activeElement;
-    if (e.key === "Tab" && (a === input || a === gin || a === bin || a === cin || a === gapIn || a === sIn || a === eIn || a === document.body)) { e.preventDefault(); tabAt = Date.now(); return; }
+    if (e.key === "Tab" && (a === input || a === gin || a === bin || a === cin || a === gapIn || a === sIn || a === eIn || a === gIn || a === document.body)) { e.preventDefault(); tabAt = Date.now(); return; }
     if (e.key === "Enter" && Date.now() - tabAt < 2000) { e.preventDefault(); tabAt = 0; restart(); return; }
     if (isType() && a === document.body && e.key.length === 1) input.focus();
   });
@@ -3670,7 +3661,7 @@ Rules:
   // The hidden input used by the current typing mode (null on Wordle/lessons, which have their own).
   function currentTypingInput() {
     if (isType()) return input;
-    return current === "balloons" ? gin : current === "blink" ? bin : current === "cafe" ? cin : current === "gap" ? gapIn : current === "scramble" ? sIn : current === "emoji" ? eIn : null;
+    return current === "balloons" ? gin : current === "blink" ? bin : current === "cafe" ? cin : current === "gap" ? gapIn : current === "scramble" ? sIn : current === "emoji" ? eIn : current === "guess" ? gIn : null;
   }
   // Focuses the current mode's hidden input, opening the native keyboard on mobile.
   function focusTypingInput() {
@@ -3685,7 +3676,7 @@ Rules:
   // Shows the floating Type button only on mobile, in a typing mode, when no dialog/gate is open.
   function updateMobileKbd() {
     const btn = $("#mobile-kbd"); if (!btn) return;
-    const typing = isType() || ["balloons", "blink", "cafe", "gap", "scramble", "emoji"].includes(current);
+    const typing = isType() || ["balloons", "blink", "cafe", "gap", "scramble", "emoji", "guess"].includes(current);
     const gate = document.getElementById("view-auth"), results = document.getElementById("results");
     btn.hidden = !(isMobile && typing && gate && gate.hidden && results && !results.open);
   }
