@@ -48,7 +48,7 @@ There are **no hash-path routes with slashes**; routes are plain hashes and the 
 1 Database helpers (`rpc`, `saveResult`) - 2 small helpers (`$`, `$$`, `esc`, `shuffle`, `pick`, `RUN`/`lg` event log) - 3 word pool (built-in + Datamuse) -
 4 appearance (light/dark/system, colour themes) - 5 text library and the Reading nook list - 6 router - 7 typing practice (+ Wikipedia source) -
 8 games - 9 Reading nook open/close - 10 accounts and account menu - 11 leaderboard - 12 run logs, AI reports, history, AI shortcuts -
-13 Learn (Beginners/Advanced courses, lessons, tips, rhythm trainer) - 14 results card `showResults()` - 15 keyboard shortcut - 16 admin upload - 17 start-up.
+13 Learn (Beginners/Advanced courses, lessons, tips, rhythm trainer) - 14 results card `showResults()` - 15 keyboard shortcut - 16 admin upload - 17 mobile helpers (device detection, native keyboard focus, Type button) - 18 start-up.
 Every top-level function and variable has a one-line comment above it.
 
 ### The pattern every mode follows
@@ -107,6 +107,13 @@ The games hub lists **Balloons** and **Wordle** first, then the newer games, the
 * Light / dark / **System** (default: follows the browser; the choice is applied before first paint so there is no flash).
 * **Colour themes** (palette button in the header): **Sunset (default)**, Cozy, Blue, Cyan, Forest, Violet, Rose, Slate; each has a light and a dark version. All were contrast-checked (text, muted text, accent text, tile text, balloon text).
 
+### Mobile & touch
+* **Auto-detection**: the head script checks `pointer: coarse`, `hover: none`, `navigator.maxTouchPoints` and the user agent, then sets `data-mobile="true"` on `<html>` before first paint. The main script re-checks on resize and on pointer/hover changes.
+* **Native keyboard**: on a phone or tablet, a floating **Type** button (bottom-right) opens the native keyboard for Classic/Timed, Balloons, Blink, Tea Time Cafe, Fill the gap, Word Scramble and Emoji Rush. Tapping the game area also focuses the hidden input.
+* **Wordle & lessons**: both keep their on-screen keyboards and add a **⌨ Use my keyboard** button on mobile, which focuses a hidden input wired to the game.
+* **Mobile-friendly inputs**: hidden inputs are fixed/centred, 16px, with `inputmode="text"` and `enterkeyhint="done"`; the viewport uses `viewport-fit=cover`; the Balloons arena uses `dvh`; the focus hint says "Tap here to type".
+* **Fallback**: if the native keyboard does not open (some in-app browsers), the on-screen keyboards for Wordle and lessons still work, and tapping the game area or the Type button retries the native keyboard.
+
 ### Run logs and AI evaluation
 * Every run is logged (`RUN.events`). Classic/Timed log every keystroke and backspace; games log their own events (balloon spawn/pop/escape/wrong key; cafe arrive/serve/leave/wrong key; blink word/answer; gap question/answer; wordle guess; scramble round/answer/timeout; emoji round/answer/timeout).
 * **Results card buttons**: *Report for AI* (`.md`, with coaching instructions for the AI and computed tables), *Raw log* (`.json`), *Copy for AI*, and **AI shortcut buttons** (Claude, ChatGPT, Gemini, Copilot, Perplexity): clicking copies the report to the clipboard and opens that site in a new tab; paste into the chat. Nothing is sent automatically.
@@ -152,6 +159,7 @@ Paste text or choose a `.txt`; format per text: header lines `title:`, `difficul
 
 ## 7. How it was tested, and what was not
 * **Page behaviour**: jsdom (a pretend browser) with a fake Supabase that follows the SQL rules: sign-in gate, guest, sign up, persistence, other-device sign-out, admin-only upload, account menu, leaderboard, themes, typing log/report/downloads, games (including Word Scramble and Emoji Rush), lessons, rhythm trainer, AI shortcuts. See `typesprint-dev-tools.zip` (`npm test`).
+* **Mobile/touch**: a simulated touch browser (coarse pointer, no hover, mobile user agent) checked the auto-detection, the floating Type button, the Wordle/lesson device-keyboard buttons, typing through the hidden inputs, and the Type button hiding when the results dialog opens.
 * **Database**: the SQL was run on a real Postgres (the `pgserver` package) with a stand-in for the password-hashing functions (real Supabase has genuine pgcrypto): accounts, one-session rule, lockout, rename/icon/delete, scores, leaderboard, admin-only functions, and "browser cannot read tables" (`npm run test:sql`).
 * **CSS**: parsed with css-tree (no syntax problems); all colour themes checked to define the same variables; contrast ratios computed.
 * **Not tested**: how it *looks* on real screens (layout, animations, colours, phones, the fixed sidebar and bottom-left button), live Wikipedia and Datamuse responses, the real Supabase project, Cloudflare Pages itself. Treat these as "please check by eye" after each deploy.
@@ -159,7 +167,7 @@ Paste text or choose a `.txt`; format per text: header lines `title:`, `difficul
 
 ## 8. Known limits and leftovers
 * Scores are computed in the browser, so a determined cheater can post fake scores (the database only rejects impossible values such as WPM > 400). Sign-ups are open (no rate limit); no email, so no password recovery.
-* History, lessons, streaks and theme are per browser/address. Lessons assume a QWERTY keyboard. The Wordle answer list is small (338 words).
+* History, lessons, streaks and theme are per browser/address. Lessons assume a QWERTY keyboard. The Wordle answer list is small (338 words). Mobile keyboard behaviour varies by browser; the on-screen keyboards are the fallback.
 * Unused leftovers (safe to delete): `playerId`, `wordsUpTo`, CSS for `.pick`, `select` and `#pin-input`. `my-tests.txt` is only a sample of the upload format.
 * Ideas not built: daily Wordle, syncing history/lessons to Supabase, sound effects, more languages/keyboard layouts, more lessons (shifted symbols, capitals), password reset by email, leaderboards by week.
 
@@ -176,3 +184,4 @@ Paste text or choose a `.txt`; format per text: header lines `title:`, `difficul
 10. **Themes**: eight colour themes, Sunset made the default, floating My runs button, lesson progress on My runs, AI shortcut buttons.
 11. **Documentation**: code comments throughout `index.html` and `supabase-setup.sql`, this README, and the dev-tools test bundle.
 12. **More games**: added **Word Scramble** and **Emoji Rush** with per-round timers, score/streak/lives, AI reports and leaderboard boards; reordered the games hub so **Balloons** and **Wordle** come first; extended the SQL mode check to the two new modes.
+13. **Mobile & touch**: auto-detection of touch/mobile devices, a floating Type button that opens the native keyboard in every typing mode, "Use my keyboard" buttons for Wordle and lessons, mobile-friendly hidden inputs, and touch/layout tweaks.

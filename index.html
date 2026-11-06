@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TypeSprint · a cozy place to practice typing</title>
 <meta name="description" content="Practice typing at your own pace with tests, timed rounds and small games.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⌨️</text></svg>">
@@ -15,7 +15,9 @@
 if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
 document.documentElement.dataset.theme=t;
 var p;try{p=localStorage.getItem('ts-palette')}catch(e){}
-document.documentElement.dataset.palette=p||'sunset'})();
+document.documentElement.dataset.palette=p||'sunset';
+var m=matchMedia('(pointer: coarse)').matches||(navigator.maxTouchPoints>0&&matchMedia('(hover: none)').matches)||/Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent);
+document.documentElement.dataset.mobile=m?'true':'false'})();
 </script>
 <style>
 /* ============ THEMING ============
@@ -69,7 +71,7 @@ main{max-width:62rem;margin:0 auto;padding:1rem 1.5rem 4rem}
 .focus-hint{position:absolute;inset:0;margin:0;display:none;place-items:center;font-weight:600;color:var(--text)}
 .blurred .passage{filter:blur(3px);opacity:.7}
 .blurred .focus-hint{display:grid}
-.sr-input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;left:0;top:0}
+.sr-input{position:fixed;left:50%;top:50%;width:1px;height:1px;opacity:0;pointer-events:none;font-size:16px;border:0;padding:0}
 
 .actions{display:flex;align-items:center;flex-wrap:wrap;gap:1rem;margin-top:1.25rem}
 .keys{margin:0;color:var(--muted);font-size:.9rem}
@@ -79,7 +81,7 @@ kbd{font:500 .8rem var(--font-mono);background:var(--surface);border:1px solid v
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 
 /* ============ Balloons ============ */
-.arena{position:relative;height:min(62vh,30rem);overflow:hidden;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);cursor:text;
+.arena{position:relative;height:min(62vh,30rem);height:min(62dvh,30rem);overflow:hidden;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);cursor:text;
   background:radial-gradient(var(--line) 1px,transparent 1.5px) 0 0/22px 22px,var(--surface)}
 .overlay{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;text-align:center;padding:1.5rem;background:color-mix(in srgb,var(--surface) 88%,transparent)}
 .overlay h2{margin:0;font-size:1.8rem;letter-spacing:-.02em}
@@ -452,6 +454,18 @@ summary{cursor:pointer;font-weight:600}
 .hist-list .ha{display:flex;gap:.4rem}
 .hist-tools{margin:0 0 1rem}
 @media (max-width:640px){.hist-list li{grid-template-columns:1fr auto}.hist-list .ha{grid-column:1/-1}}
+/* ---- mobile / touch: keyboard button, device-keyboard buttons, touch behaviour ---- */
+html{-webkit-text-size-adjust:100%}
+body{touch-action:manipulation}
+.mobile-kbd{position:fixed;right:1rem;bottom:1rem;z-index:36;display:none;align-items:center;gap:.4rem;padding:.7rem 1rem;border:1px solid var(--line);border-radius:14px;background:var(--accent);color:var(--on-accent);font:700 .9rem var(--font-ui);box-shadow:var(--shadow);cursor:pointer;touch-action:manipulation}
+:root[data-mobile="true"] .mobile-kbd{display:inline-flex}
+.mobile-kbd[hidden]{display:none!important}
+.device-kbd{display:none}
+:root[data-mobile="true"] .device-kbd{display:inline-flex}
+.device-kbd[hidden]{display:none!important}
+:root[data-mobile="true"] .btn,:root[data-mobile="true"] .card,:root[data-mobile="true"] .course-tab,:root[data-mobile="true"] .lesson-card,:root[data-mobile="true"] .key,:root[data-mobile="true"] .wkey{touch-action:manipulation}
+:root[data-mobile="true"] .passage-wrap,:root[data-mobile="true"] .arena,:root[data-mobile="true"] .blink-stage,:root[data-mobile="true"] .cafe,:root[data-mobile="true"] .gap-stage,:root[data-mobile="true"] .scramble-stage,:root[data-mobile="true"] .emoji-stage{cursor:pointer}
+@media (max-width:640px){.mobile-kbd{right:.75rem;bottom:.75rem;padding:.65rem .85rem}}
 /* ============ COLOUR THEMES (generated from a table; each has a light and a dark rule) ============
    :root[data-palette="x"] = light values, :root[data-palette="x"][data-theme="dark"] = dark values.
    --on-accent is the text colour used on top of --accent (white or near-black per theme, contrast-checked). */
@@ -642,7 +656,7 @@ summary{cursor:pointer;font-weight:600}
     </div>
     <div class="passage-wrap blurred" id="passage-wrap">
       <div id="passage" class="passage" aria-label="Text to type"></div>
-      <textarea id="type-input" class="sr-input" aria-label="Type the text shown" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+      <textarea id="type-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type the text shown" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
       <p class="focus-hint">Click here or start typing</p>
     </div>
     <p class="attrib" id="wiki-attrib" hidden></p>
@@ -675,7 +689,7 @@ summary{cursor:pointer;font-weight:600}
         <button id="start-game" class="btn primary">Start game</button>
       </div>
     </div>
-    <input id="game-input" class="sr-input" aria-label="Type balloon words" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input id="game-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type balloon words" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="restart-game" class="btn">Restart</button>
       <p class="keys"><kbd>Tab</kbd> then <kbd>Enter</kbd> restarts the game</p>
@@ -701,7 +715,7 @@ summary{cursor:pointer;font-weight:600}
       <p class="blink-hint" id="blink-hint"></p>
       <div class="blink-word" id="blink-word" aria-live="polite"></div>
     </div>
-    <input id="blink-input" class="sr-input" aria-label="Type the word you saw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input id="blink-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type the word you saw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="restart-blink" class="btn">Restart</button>
       <p class="keys"><kbd>Tab</kbd> then <kbd>Enter</kbd> restarts the game</p>
@@ -724,7 +738,7 @@ summary{cursor:pointer;font-weight:600}
       </div>
       <div class="seats" id="seats"></div>
     </div>
-    <input id="cafe-input" class="sr-input" aria-label="Type the order" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input id="cafe-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type the order" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="restart-cafe" class="btn">Restart</button>
       <p class="keys"><kbd>Tab</kbd> then <kbd>Enter</kbd> restarts the game</p>
@@ -749,7 +763,7 @@ summary{cursor:pointer;font-weight:600}
       <p class="gap-sentence" id="gap-sentence" aria-live="polite"></p>
     </div>
     <p class="attrib" id="gap-attrib" hidden></p>
-    <input id="gap-input" class="sr-input" aria-label="Type the missing word" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input id="gap-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type the missing word" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="restart-gap" class="btn">Restart</button>
       <p class="keys"><kbd>Tab</kbd> then <kbd>Enter</kbd> restarts the game</p>
@@ -774,8 +788,10 @@ summary{cursor:pointer;font-weight:600}
       <div class="wboard" id="wboard" aria-label="Guess board"></div>
       <div class="wkeys" id="wkeys"></div>
     </div>
+    <input id="wordle-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type your Wordle guess" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="wordle-new" class="btn">New word</button>
+      <button id="wordle-device-kbd" class="btn device-kbd" hidden>⌨ Use my keyboard</button>
       <p class="keys">Type on your keyboard and press <kbd>Enter</kbd> to guess</p>
     </div>
   </section>
@@ -801,7 +817,7 @@ summary{cursor:pointer;font-weight:600}
       <div class="scramble-answer" id="s-answer"></div>
       <p class="scramble-msg" id="s-msg" role="status"></p>
     </div>
-    <input id="scramble-input" class="sr-input" aria-label="Type the unscrambled word" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input id="scramble-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type the unscrambled word" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="restart-scramble" class="btn">Restart</button>
       <p class="keys"><kbd>Tab</kbd> then <kbd>Enter</kbd> restarts the game</p>
@@ -828,7 +844,7 @@ summary{cursor:pointer;font-weight:600}
       <div class="emoji-answer" id="e-answer"></div>
       <p class="emoji-msg" id="e-msg" role="status"></p>
     </div>
-    <input id="emoji-input" class="sr-input" aria-label="Type the emoji name" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input id="emoji-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type the emoji name" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="restart-emoji" class="btn">Restart</button>
       <p class="keys"><kbd>Tab</kbd> then <kbd>Enter</kbd> restarts the game</p>
@@ -887,9 +903,11 @@ summary{cursor:pointer;font-weight:600}
       <div class="hands" id="hands" aria-hidden="true"></div>
       <div class="kbd" id="kbd" aria-label="On-screen keyboard"></div>
     </div>
+    <input id="lesson-input" class="sr-input" inputmode="text" enterkeyhint="done" aria-label="Type the lesson keys" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="actions">
       <button id="ls-demo" class="btn">▶ Watch the demo</button>
       <button id="ls-start" class="btn primary">Start practice</button>
+      <button id="ls-device-kbd" class="btn device-kbd" hidden>⌨ Use my keyboard</button>
       <button id="ls-next" class="btn" hidden>Next lesson →</button>
     </div>
   </section>
@@ -919,6 +937,8 @@ summary{cursor:pointer;font-weight:600}
 <footer class="foot"><a id="admin-link" href="#upload" hidden>Add tests</a></footer>
 <!-- Floating "My runs" button (bottom-left). -->
 <a id="runs-fab" class="runs-fab" href="#history" aria-label="My runs"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V11M10 20V4M16 20v-6M2 20h20"/></svg><span>My runs</span></a>
+<!-- Mobile helper: opens the native keyboard for the current typing mode. -->
+<button id="mobile-kbd" class="mobile-kbd" aria-label="Open the keyboard" hidden>⌨ <span>Type</span></button>
 
 <!-- Results card shown after every test or game: rating, stats, report/log downloads, AI shortcuts. -->
 <dialog id="results" aria-labelledby="r-rating">
@@ -975,7 +995,8 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     14  Results card          showResults() - every mode ends here
     15  Keyboard shortcuts    Tab then Enter restarts
     16  Admin upload page     paste/upload texts (admin only)
-    17  Start-up             route(); loadLibrary(); loadWordPool(); initAuth();
+    17  Mobile helpers       device detection, native keyboard focus, Type button
+    18  Start-up             route(); loadLibrary(); loadWordPool(); initAuth();
    Conventions: each mode has a state object (T, G, B, C, GP, W, LS), start/stop/end functions, and
    ends by calling showResults({mode, variant, label, wpm, accuracy, errors, duration_seconds, ...}).
    Games log what happened with lg(kind, ...data); those events become the downloadable reports.
@@ -1210,9 +1231,12 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (name === "upload" && !(auth && auth.is_admin)) name = "home";     // the upload page is for the admin account only
     current = ROUTES.includes(name) ? name : "home";
     if (isType()) practiceMode = current;
+    blurTypingInputs();
     stopBalloons(); stopBlink(); stopCafe(); stopGap(); stopScramble(); stopEmoji(); clearInterval(T.timer); clearInterval(W.timer); stopLesson(); stopRhythm();
     const view = { home: "home", games: "games", upload: "upload", balloons: "balloon", blink: "blink", cafe: "cafe", gap: "gap", wordle: "wordle", scramble: "scramble", emoji: "emoji", leaderboard: "leaderboard", learn: "learn", lesson: "lesson", history: "history" };
     $$("main > section").forEach((s) => { s.hidden = s.id !== "view-" + (isType() ? "type" : view[current]); });
+    if (current !== "wordle") { const wi = $("#wordle-input"); if (wi) wi.blur(); }
+    if (current !== "lesson") { const li = $("#lesson-input"); if (li) li.blur(); }
     if (current === "upload") renderUpload();
     if (current === "wordle") wordleOpen();
     if (current === "leaderboard") openLeaderboard();
@@ -1229,6 +1253,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
       resetTest();
     }
     window.scrollTo(0, 0);
+    updateMobileKbd();
   }
   addEventListener("hashchange", route);
   // Restarts whatever mode is on screen (also bound to Tab then Enter).
@@ -2000,6 +2025,23 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   wKeys.addEventListener("click", (e) => { const b = e.target.closest("[data-k]"); if (b) wPress(b.dataset.k); });
   $("#wordle-len").addEventListener("click", (e) => { const b = e.target.closest("[data-n]"); if (b) { W.len = +b.dataset.n; wordleOpen(); } });
   $("#wordle-new").addEventListener("click", wordleOpen);
+  // Native/mobile keyboard support for Wordle: a hidden input mirrors the on-screen keys.
+  const wIn = $("#wordle-input");
+  wIn.addEventListener("keydown", (e) => {
+    if (current !== "wordle" || !authEl.hidden || document.getElementById("results").open) return;
+    if (e.key === "Enter") { e.preventDefault(); wPress("enter"); }
+    else if (e.key === "Backspace") { e.preventDefault(); wPress("back"); }
+    else if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); wPress(e.key.toLowerCase()); }
+  });
+  wIn.addEventListener("input", () => {
+    const v = wIn.value; wIn.value = "";
+    if (current !== "wordle" || !authEl.hidden || document.getElementById("results").open) return;
+    for (const ch of v) {
+      if (ch === "\n") wPress("enter");
+      else if (/^[a-zA-Z]$/.test(ch)) wPress(ch.toLowerCase());
+    }
+  });
+  $("#wordle-device-kbd").addEventListener("click", () => { wIn.value = ""; wIn.focus({ preventScroll: true }); });
 
   /* ---------- Word Scramble ---------- */
   // Word Scramble state: current word, its shuffled letters, typed answer, score/lives and round timer.
@@ -2235,6 +2277,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     $("#admin-link").hidden = !admin; $("#lib-add").hidden = !admin;
     authEl.hidden = !!auth || guest;
     if (keepMenu && !acct.hidden) $("#acct-btn").setAttribute("aria-expanded", "true"); else closeAcct();
+    updateMobileKbd();
   }
   // Switches the sign-in screen between Sign in and Create account.
   function setAuthTab(t) {
@@ -2927,6 +2970,18 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     if (nb.dataset.to) { lessonId = nb.dataset.to; openLesson(); }
   });
   kbdEl.addEventListener("pointerdown", (e) => { const k = e.target.closest(".key"); if (k && current === "lesson" && LS.running) { e.preventDefault(); lessonKey(k.dataset.k); } });
+  // Native/mobile keyboard support for lessons: a hidden input mirrors the on-screen keys.
+  const lessonIn = $("#lesson-input");
+  lessonIn.addEventListener("keydown", (e) => {
+    if (current !== "lesson" || !authEl.hidden || document.getElementById("results").open) return;
+    if (e.key.length === 1) { e.preventDefault(); if (LS.running) lessonKey(e.key.toLowerCase()); }
+  });
+  lessonIn.addEventListener("input", () => {
+    const v = lessonIn.value; lessonIn.value = "";
+    if (current !== "lesson" || !authEl.hidden || document.getElementById("results").open) return;
+    for (const ch of v) if (ch.length === 1 && LS.running) lessonKey(ch.toLowerCase());
+  });
+  $("#ls-device-kbd").addEventListener("click", () => { lessonIn.value = ""; lessonIn.focus({ preventScroll: true }); });
 
   /* ---------- Learn: tips and rhythm trainer ---------- */
   // Draws the course tabs and the lesson cards for the selected course. A locked course shows a progress panel.
@@ -3023,7 +3078,9 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     $("#r-grid").innerHTML = cells.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
     recordRun(r, name);
     const status = $("#save-status"); status.textContent = "";
+    blurTypingInputs();
     dlg.showModal();
+    updateMobileKbd();
     if (!auth) { status.textContent = "You're playing as a guest, so this score isn't saved. Sign in to join the leaderboard."; return; }
     if (!TypeSprintDB.configured) { status.textContent = "Scores can't be saved until Supabase is connected (see the top of index.html)."; return; }
     status.textContent = "Saving…";
@@ -3043,6 +3100,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     else if (current === "scramble" && !SC.on) { stopScramble(); }
     else if (current === "emoji" && !EM.on) { stopEmoji(); }
     else if (isType()) input.focus();
+    updateMobileKbd();
   });
 
   /* ---------- Keyboard: Tab then Enter restarts ---------- */
@@ -3145,6 +3203,52 @@ Rules:
     try { await navigator.clipboard.writeText(AI_PROMPT); $("#copy-prompt").textContent = "Copied"; }
     catch { $("#ai-prompt").select(); $("#copy-prompt").textContent = "Press Ctrl+C to copy"; }
   });
+
+  /* ---------- Mobile detection and keyboard helpers ---------- */
+  // Blurs every hidden typing input, closing the native mobile keyboard when changing pages or opening results.
+  function blurTypingInputs() { $$(".sr-input").forEach((el) => el.blur()); }
+  // Auto-detects touch/mobile devices so the site can open the native keyboard and show touch-friendly controls.
+  const mqCoarse = matchMedia("(pointer: coarse)"), mqHover = matchMedia("(hover: none)");
+  let isMobile = root.dataset.mobile === "true";
+  // Updates the mobile flag, the CSS hook, the tap hint and the device-keyboard buttons.
+  function detectMobile() {
+    isMobile = root.dataset.mobile === "true" || mqCoarse.matches || (navigator.maxTouchPoints > 0 && mqHover.matches) || /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent);
+    root.dataset.mobile = isMobile ? "true" : "false";
+    document.body.classList.toggle("is-mobile", isMobile);
+    const hint = $(".focus-hint"); if (hint) hint.textContent = isMobile ? "Tap here to type" : "Click here or start typing";
+    const wk = $("#wordle-device-kbd"), lk = $("#ls-device-kbd");
+    if (wk) wk.hidden = !isMobile;
+    if (lk) lk.hidden = !isMobile;
+    updateMobileKbd();
+  }
+  // The hidden input used by the current typing mode (null on Wordle/lessons, which have their own).
+  function currentTypingInput() {
+    if (isType()) return input;
+    return current === "balloons" ? gin : current === "blink" ? bin : current === "cafe" ? cin : current === "gap" ? gapIn : current === "scramble" ? sIn : current === "emoji" ? eIn : null;
+  }
+  // Focuses the current mode's hidden input, opening the native keyboard on mobile.
+  function focusTypingInput() {
+    const el = currentTypingInput(); if (!el) return;
+    el.setAttribute("inputmode", "text"); el.setAttribute("enterkeyhint", "done");
+    el.focus({ preventScroll: true });
+    if (isMobile) {
+      const view = document.getElementById("view-" + (isType() ? "type" : current === "balloons" ? "balloon" : current));
+      if (view) view.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+  }
+  // Shows the floating Type button only on mobile, in a typing mode, when no dialog/gate is open.
+  function updateMobileKbd() {
+    const btn = $("#mobile-kbd"); if (!btn) return;
+    const typing = isType() || ["balloons", "blink", "cafe", "gap", "scramble", "emoji"].includes(current);
+    const gate = document.getElementById("view-auth"), results = document.getElementById("results");
+    btn.hidden = !(isMobile && typing && gate && gate.hidden && results && !results.open);
+  }
+  $("#mobile-kbd").addEventListener("pointerdown", (e) => { e.preventDefault(); focusTypingInput(); });
+  $("#mobile-kbd").addEventListener("click", (e) => { e.preventDefault(); focusTypingInput(); });
+  mqCoarse.addEventListener?.("change", detectMobile);
+  mqHover.addEventListener?.("change", detectMobile);
+  addEventListener("resize", detectMobile);
+  detectMobile();
 
   fillPick();
   route();
