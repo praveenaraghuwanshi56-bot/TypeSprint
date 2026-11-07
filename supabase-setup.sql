@@ -344,6 +344,152 @@ begin
 end $$;
 grant execute on function public.impersonate_player(text, text) to anon, authenticated;
 
+-- 12) Run history: full game/test run data per player (replaces ts-runs localStorage) --
+create table if not exists public.run_history (
+  id         uuid primary key default gen_random_uuid(),
+  player_id  uuid not null references public.players(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  mode       text not null,
+  variant    text,
+  data       jsonb not null default '{}'::jsonb
+);
+alter table public.run_history enable row level security;
+drop policy if exists "players can save own run history" on public.run_history;
+create policy "players can save own run history" on public.run_history
+  for insert to authenticated with check (auth.uid() = player_id);
+drop policy if exists "players can read own run history" on public.run_history;
+create policy "players can read own run history" on public.run_history
+  for select to authenticated using (auth.uid() = player_id);
+revoke all on public.run_history from anon, authenticated;
+
+create or replace function public.save_run_history(tok text, mode text, variant text, data jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := public._uid(tok);
+begin
+  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
+  insert into public.run_history (player_id, mode, variant, data)
+  values (uid, mode, variant, data);
+  return jsonb_build_object('ok', true);
+end $$;
+grant execute on function public.save_run_history(text, text, text, jsonb) to anon, authenticated;
+
+create or replace function public.get_run_history(tok text, lim int default 40) returns jsonb
+language plpgsql security definer stable set search_path = public as $$
+declare uid uuid := public._uid(tok); rows jsonb;
+begin
+  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'id', id, 'at', created_at, 'mode', mode, 'variant', variant, 'data', data
+    ) order by created_at desc
+  ), '[]'::jsonb) into rows from public.run_history where player_id = uid limit least(greatest(coalesce(lim, 40), 1), 200);
+  return jsonb_build_object('ok', true, 'runs', rows);
+end $$;
+grant execute on function public.get_run_history(text, int) to anon, authenticated;
+
+-- 13) Lesson progress: per-player lesson completion data (replaces ts-lessons localStorage) --
+create table if not exists public.lesson_progress (
+  id         uuid primary key default gen_random_uuid(),
+  player_id  uuid not null references public.players(id) on delete cascade,
+  lesson_id  text not null,
+  done       boolean not null default false,
+  best       integer not null default 0,
+  last       integer not null default 0,
+  secs       integer,
+  attempts   integer not null default 1,
+  updated_at timestamptz not null default now(),
+  unique (player_id, lesson_id)
+);
+alter table public.lesson_progress enable row level security;
+drop policy if exists "players can save own lesson progress" on public.lesson_progress;
+create policy "players can save own lesson progress" on public.lesson_progress
+  for insert to authenticated with check (auth.uid() = player_id);
+drop policy if exists "players can update own lesson progress" on public.lesson_progress;
+create policy "players can update own lesson progress" on public.lesson_progress
+  for update to authenticated using (auth.uid() = player_id);
+drop policy if exists "players can read own lesson progress" on public.lesson_progress;
+create policy "players can read own lesson progress" on public.lesson_progress
+  for select to authenticated using (auth.uid() = player_id);
+revoke all on public.lesson_progress from anon, authenticated;
+
+create or replace function public.save_lesson_progress(tok text, lesson_id text, done boolean, best integer, last integer, secs integer, attempts integer) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := public._uid(tok);
+begin
+  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
+  insert into public.lesson_progress (player_id, lesson_id, done, best, last, secs, attempts, updated_at)
+  values (uid, lesson_id, done, best, last, secs, attempts, now())
+  on conflict (player_id, lesson_id) do update set
+    done = excluded.done, best = excluded.best, last = excluded.last,
+    secs = excluded.secs, attempts = excluded.attempts, updated_at = now();
+  return jsonb_build_object('ok', true);
+end $$;
+grant execute on function public.save_lesson_progress(text, text, boolean, integer, integer, integer, integer) to anon, authenticated;
+
+create or replace function public.get_lesson_progress(tok text) returns jsonb
+language plpgsql security definer stable set search_path = public as $$
+declare uid uuid := public._uid(tok); rows jsonb;
+begin
+  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'lesson_id', lesson_id, 'done', done, 'best', best, 'last', last,
+      'secs', secs, 'attempts', attempts, 'at', updated_at
+    ) order by lesson_id
+  ), '[]'::jsonb) into rows from public.lesson_progress where player_id = uid;
+  return jsonb_build_object('ok', true, 'lessons', rows);
+end $$;
+grant execute on function public.get_lesson_progress(text) to anon, authenticated;
+
+-- 14) Wordle stats: per-player Wordle streaks (replaces ts-wordle localStorage) --
+create table if not exists public.wordle_stats (
+  id         uuid primary key default gen_random_uuid(),
+  player_id  uuid not null references public.players(id) on delete cascade,
+  word_len   integer not null,
+  streak     integer not null default 0,
+  best       integer not null default 0,
+  updated_at timestamptz not null default now(),
+  unique (player_id, word_len)
+);
+alter table public.wordle_stats enable row level security;
+drop policy if exists "players can save own wordle stats" on public.wordle_stats;
+create policy "players can save own wordle stats" on public.wordle_stats
+  for insert to authenticated with check (auth.uid() = player_id);
+drop policy if exists "players can update own wordle stats" on public.wordle_stats;
+create policy "players can update own wordle stats" on public.wordle_stats
+  for update to authenticated using (auth.uid() = player_id);
+drop policy if exists "players can read own wordle stats" on public.wordle_stats;
+create policy "players can read own wordle stats" on public.wordle_stats
+  for select to authenticated using (auth.uid() = player_id);
+revoke all on public.wordle_stats from anon, authenticated;
+
+create or replace function public.save_wordle_stats(tok text, word_len integer, streak integer, best integer) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := public._uid(tok);
+begin
+  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
+  insert into public.wordle_stats (player_id, word_len, streak, best, updated_at)
+  values (uid, word_len, streak, best, now())
+  on conflict (player_id, word_len) do update set
+    streak = excluded.streak, best = excluded.best, updated_at = now();
+  return jsonb_build_object('ok', true);
+end $$;
+grant execute on function public.save_wordle_stats(text, integer, integer, integer) to anon, authenticated;
+
+create or replace function public.get_wordle_stats(tok text) returns jsonb
+language plpgsql security definer stable set search_path = public as $$
+declare uid uuid := public._uid(tok); rows jsonb;
+begin
+  if uid is null then return jsonb_build_object('ok', false, 'error', 'not_signed_in'); end if;
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'word_len', word_len, 'streak', streak, 'best', best
+    ) order by word_len
+  ), '[]'::jsonb) into rows from public.wordle_stats where player_id = uid;
+  return jsonb_build_object('ok', true, 'stats', rows);
+end $$;
+grant execute on function public.get_wordle_stats(text) to anon, authenticated;
+
 -- 10) App file bucket: admin uploads the app/file, everyone can download it --
 -- The top-right “Download the app” button serves the object at path "TypeSprint-App".
 -- Uploading to the same path with upsert replaces the previous file.

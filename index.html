@@ -2154,12 +2154,15 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     else if (W.guesses.length >= 6) wEnd(false, row, marks);
   }
   // Wordle finished: updates streaks, plays the bounce, shows the results card.
-  function wEnd(win, row, marks) {
+  async function wEnd(win, row, marks) {
     W.over = true; clearInterval(W.timer);
     W.secs = W.start ? (performance.now() - W.start) / 1000 : 0;
     const st = wStat(), n = W.guesses.length;
     st.streak = win ? st.streak + 1 : 0; st.best = Math.max(st.best, st.streak);
     try { localStorage.setItem("ts-wordle", JSON.stringify(wStats)); } catch {}
+    if (auth) {
+      await rpc("save_wordle_stats", { tok: auth.token, word_len: W.len, streak: st.streak, best: st.best });
+    }
     wordleStats();
     if (win) [...row.children].forEach((t, i) => { t.style.animationDelay = i * 100 + "ms"; t.classList.add("bounce"); });
     wToastShow(win ? W_RATINGS[n - 1][0] : W.answer.toUpperCase(), true);
@@ -2743,6 +2746,32 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
   }
   // Asks the server whether this session is still the account's only active one. Runs on start, every 30 s,
   // and when the tab regains focus.
+  // Load run history, lesson progress, and Wordle stats from Supabase after sign-in.
+  async function loadPlayerDataFromDb() {
+    if (!auth) return;
+    // Load run history
+    const r1 = await rpc("get_run_history", { tok: auth.token, lim: 40 });
+    if (r1.ok && r1.data && r1.data.runs) {
+      HISTORY = r1.data.runs.map((r) => ({
+        v: 1, id: r.id, at: r.at, mode: r.mode, variant: r.variant,
+        label: r.data.label || r.mode,
+        summary: r.data.summary || {},
+        context: r.data.context || {},
+        events: r.data.events || [],
+        analysis: r.data.analysis
+      }));
+      try { localStorage.setItem("ts-runs", JSON.stringify(HISTORY.slice(0, 40))); } catch {}
+    }
+    // Load lesson progress
+    await loadLessonsFromDb();
+    // Load Wordle stats
+    const r3 = await rpc("get_wordle_stats", { tok: auth.token });
+    if (r3.ok && r3.data && r3.data.stats) {
+      r3.data.stats.forEach((s) => { wStats[s.word_len] = { streak: s.streak, best: s.best }; });
+      try { localStorage.setItem("ts-wordle", JSON.stringify(wStats)); } catch {}
+    }
+  }
+
   async function verifySession() {
     if (!auth) return;
     const r = await rpc("check_session", { tok: auth.token });
@@ -2750,6 +2779,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
     if (!r.ok) return sessionKicked();
     const next = { ...auth, username: r.data.username, is_admin: r.data.is_admin, letter: r.data.avatar_letter || null, color: r.data.avatar_color || null, geminiKey: r.data.gemini_key || null };
     if (JSON.stringify(next) !== JSON.stringify(auth)) { const adminChanged = next.is_admin !== auth.is_admin; auth = next; saveSession(); applyAuthUI(true); if (adminChanged) route(); }
+    await loadPlayerDataFromDb();
   }
   /* ---------- Account menu: avatar, rename, icon, delete ---------- */
   // Ten icon background colours offered in the account menu.
@@ -3103,11 +3133,15 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   try { HISTORY = JSON.parse(localStorage.getItem("ts-runs") || "[]"); } catch {}
   // Saves the newest 40 runs to localStorage (ts-runs), dropping older ones if the browser runs out of
   // space.
-  function saveHistory() {                  // keeps the newest 40 runs; drops older ones if the browser runs out of room
+  async function saveHistory(run) {                  // keeps the newest 40 runs locally; also saves to Supabase
     let list = HISTORY.slice(0, 40);
     for (;;) {
-      try { localStorage.setItem("ts-runs", JSON.stringify(list)); HISTORY = list; return; }
+      try { localStorage.setItem("ts-runs", JSON.stringify(list)); HISTORY = list; break; }
       catch { if (list.length <= 1) return; list = list.slice(0, Math.floor(list.length * 0.7)); }
+    }
+    // Also save the latest run to Supabase
+    if (run && auth) {
+      await rpc("save_run_history", { tok: auth.token, mode: run.mode, variant: run.variant || null, data: run });
     }
   }
   // Extra context stored with a run (text used, balloon type, Wordle answer ...).
@@ -3243,7 +3277,24 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   // Which course tab is open on the Learn page.
   let learnTab = "beginners";
   // Raw lesson progress from localStorage (ts-lessons).
-  const lessonDone = () => { try { return JSON.parse(localStorage.getItem("ts-lessons") || "{}"); } catch { return {}; } };
+  // Lesson progress in memory (loaded from Supabase on sign-in, falls back to localStorage).
+  let lessonDb = null;      // null = not loaded yet; {} = loaded, empty
+  // Load lesson progress from Supabase when the player signs in.
+  async function loadLessonsFromDb() {
+    if (!auth) return;
+    const r = await rpc("get_lesson_progress", { tok: auth.token });
+    if (r.ok && r.data && r.data.lessons) {
+      const out = {};
+      r.data.lessons.forEach((l) => { out[l.lesson_id] = { done: l.done, best: l.best, last: l.last, secs: l.secs, attempts: l.attempts, at: l.at }; });
+      lessonDb = out;
+    } else {
+      lessonDb = {};
+    }
+  }
+  const lessonDone = () => {
+    if (auth && lessonDb !== null) return lessonDb;
+    try { return JSON.parse(localStorage.getItem("ts-lessons") || "{}"); } catch { return {}; }
+  };
   // Lesson progress normalised to { done, best, last, secs, attempts, at } (also reads the older save
   // format).
   function lessonState() {                  // also understands the older save format, which only had { acc, secs, at }
@@ -3252,10 +3303,14 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     return out;
   }
   // Records one lesson attempt (best accuracy, attempts, done once it reaches 85%).
-  function recordLesson(id, acc, secs, pass) {
+  async function recordLesson(id, acc, secs, pass) {
     const raw = lessonDone(), cur = lessonState()[id] || { attempts: 0, best: 0, done: false, secs: null };
     raw[id] = { done: cur.done || pass, best: Math.max(cur.best, acc), last: acc, secs: pass ? secs : cur.secs, attempts: cur.attempts + 1, at: Date.now() };
     try { localStorage.setItem("ts-lessons", JSON.stringify(raw)); } catch {}
+    if (auth) {
+      lessonDb = raw;
+      await rpc("save_lesson_progress", { tok: auth.token, lesson_id: id, done: !!raw[id].done, best: raw[id].best, last: raw[id].last, secs: raw[id].secs || null, attempts: raw[id].attempts });
+    }
   }
   // On-screen keyboard element of the lesson page.
   const kbdEl = $("#kbd"), handsEl = $("#hands"), KEYEL = {}, FING = {};
