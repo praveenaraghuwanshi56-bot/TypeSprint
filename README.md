@@ -1,7 +1,7 @@
 # TypeSprint: full project handoff
 
 A cozy, modern typing-practice website: typing tests, seven small games, touch-typing lessons, accounts with a leaderboard, and
-downloadable run logs that can be given to an AI coach. This document explains **everything built so far** so you can start a new
+downloadable run logs. This document explains **everything built so far** so you can start a new
 chat (or hand the project to another AI) and continue exactly where this one stopped.
 
 * **Deliverables:** `index.html` (the whole website, one file), `supabase-setup.sql` (the database), this `README.md`,
@@ -41,13 +41,13 @@ There are **no hash-path routes with slashes**; routes are plain hashes and the 
 | `#balloons`, `#wordle`, `#scramble`, `#emoji`, `#blink`, `#cafe`, `#gap` | The seven games |
 | `#learn`, `#lesson` | Learn hub; one lesson (which lesson is held in memory in `lessonId`) |
 | `#leaderboard` | Rankings |
-| `#history` | "My runs": learning progress, AI shortcuts, downloads, recent runs |
+| `#history` | "My runs": learning progress, downloads, recent runs |
 | `#upload` | Admin-only text upload (non-admins are redirected to `#home`) |
 
 ### Script sections (in file order)
 1 Database helpers (`rpc`, `saveResult`) - 2 small helpers (`$`, `$$`, `esc`, `shuffle`, `pick`, `RUN`/`lg` event log) - 3 word pool (built-in + Datamuse) -
 4 appearance (light/dark/system, colour themes) - 5 text library and the Reading nook list - 6 router - 7 typing practice (+ Wikipedia source) -
-8 games - 9 Reading nook open/close - 10 accounts and account menu - 11 leaderboard - 12 run logs, AI reports, history, AI shortcuts -
+8 games - 9 Reading nook open/close - 10 accounts and account menu - 11 leaderboard - 12 run logs, history -
 13 Learn (Beginners/Advanced courses, lessons, tips, rhythm trainer) - 14 results card `showResults()` - 15 keyboard shortcut - 16 admin upload - 17 mobile helpers (device detection, native keyboard focus, Type button) - 18 start-up.
 Every top-level function and variable has a one-line comment above it.
 
@@ -115,11 +115,11 @@ The games hub lists **Balloons** and **Wordle** first, then the newer games, the
 * **Mobile-friendly inputs**: hidden inputs are fixed/centred, 16px, with `inputmode="text"` and `enterkeyhint="done"`; the viewport uses `viewport-fit=cover`; the Balloons arena uses `dvh`; the focus hint says "Tap here to type".
 * **Fallback**: if the native keyboard does not open (some in-app browsers), the on-screen keyboards for Wordle and lessons still work, and tapping the game area or the Type button retries the native keyboard.
 
-### Run logs and AI evaluation
+### Run logs
 * Every run is logged (`RUN.events`). Classic/Timed log every keystroke and backspace; games log their own events (balloon spawn/pop/escape/wrong key; cafe arrive/serve/leave/wrong key; blink word/answer; gap question/answer; wordle guess; scramble round/answer/timeout; emoji round/answer/timeout).
-* **Results card buttons**: *Report for AI* (`.md`, with coaching instructions for the AI and computed tables), *Raw log* (`.json`), *Copy for AI*, and **AI shortcut buttons** (Claude, ChatGPT, Copilot, Perplexity): clicking copies the report to the clipboard and opens that site in a new tab; paste into the chat. Nothing is sent automatically.
+* **Results card buttons**: *Raw log* (`.json`).
 * Typing analysis (`analyzeTyping`): raw vs net WPM, backspaces, mean/SD of key gaps and consistency, pauses > 1 s, WPM per 5 s, slowest keys, most-missed keys, expected->typed mix-ups, error rate and speed per finger (standard QWERTY map) and per keyboard row.
-* **My runs** (`#history`, floating rounded button bottom-left, also in the account menu): *Learning progress* (lessons completed, best accuracy, attempts), AI shortcuts for the **progress report** (trend, persistent weak keys/fingers, lessons), downloads (progress report, all runs `.json` including lessons, per-run report/log), recent runs (last 40, browser only), clear history.
+* **My runs** (`#history`, floating rounded button bottom-left, also in the account menu): *Learning progress* (lessons completed, best accuracy, attempts), downloads (progress report, all runs `.json` including lessons, per-run report/log), recent runs (last 40, browser only), clear history.
 * The results card also shows one personalised tip (e.g. low accuracy -> "Accuracy comes first").
 
 ### Learn (`#learn`)
@@ -129,7 +129,7 @@ The games hub lists **Balloons** and **Wordle** first, then the newer games, the
 ### Admin panel (`#admin`, admin only)
 The admin panel has three tabs:
 
-**Tests** – Paste text or choose a `.txt`; format per text: header lines `title:`, `difficulty: easy|medium|hard`, `category:`, then a line `---`, then the text on one line; texts separated by a line `===`. A plain paragraph also works. Text is normalised to ASCII (40-3000 chars). `AI_PROMPT` (copy button on the page) is a prompt that makes an AI write texts in this format. The page lists uploaded texts with Delete.
+**Tests** – Paste text or choose a `.txt`; format per text: header lines `title:`, `difficulty: easy|medium|hard`, `category:`, then a line `---`, then the text on one line; texts separated by a line `===`. A plain paragraph also works. Text is normalised to ASCII (40-3000 chars). The page lists uploaded texts with Delete.
 
 **App file** – Upload a single file (e.g. the Windows app). Uploading replaces the previous file (only one is stored at a time, so space isn't wasted). Users can download it from the **"Download"** button in the top-right header, next to the light/dark mode toggle. The file is served from Supabase storage (bucket `app_files`).
 
@@ -166,7 +166,7 @@ The admin panel has three tabs:
 ---
 
 ## 7. How it was tested, and what was not
-* **Page behaviour**: jsdom (a pretend browser) with a fake Supabase that follows the SQL rules: sign-in gate, guest, sign up, persistence, other-device sign-out, admin-only upload, account menu, leaderboard, themes, typing log/report/downloads, games (including Word Scramble and Emoji Rush), lessons, rhythm trainer, AI shortcuts. See `typesprint-dev-tools.zip` (`npm test`).
+* **Page behaviour**: jsdom (a pretend browser) with a fake Supabase that follows the SQL rules: sign-in gate, guest, sign up, persistence, other-device sign-out, admin-only upload, account menu, leaderboard, themes, typing log/report/downloads, games (including Word Scramble and Emoji Rush), lessons, rhythm trainer. See `typesprint-dev-tools.zip` (`npm test`).
 * **Mobile/touch**: a simulated touch browser (coarse pointer, no hover, mobile user agent) checked the auto-detection, the floating Type button, the Wordle/lesson device-keyboard buttons, typing through the hidden inputs, and the Type button hiding when the results dialog opens.
 * **Database**: the SQL was run on a real Postgres (the `pgserver` package) with a stand-in for the password-hashing functions (real Supabase has genuine pgcrypto): accounts, one-session rule, lockout, rename/icon/delete, scores, leaderboard, admin-only functions, and "browser cannot read tables" (`npm run test:sql`).
 * **CSS**: parsed with css-tree (no syntax problems); all colour themes checked to define the same variables; contrast ratios computed.
@@ -187,9 +187,9 @@ The admin panel has three tabs:
 5. **Games and structure**: Tea Time Cafe, Fill the gap (later made easier: clue letter, 5 lives, shorter), Wordle (4-6 letters), Practice and Games tabs.
 6. **Accounts**: custom sign-up/sign-in, guest mode, one device at a time, leaderboard, admin-only upload, left slide-in sidebar.
 7. **Polish**: account menu (rename/icon/delete), styled dropdowns, sidebar icon, hosting moved from Netlify to Cloudflare Pages.
-8. **Learning and evaluation**: run logs and AI reports, My runs, Learn tab (lessons, tips, rhythm trainer).
+8. **Learning and evaluation**: run logs, My runs, Learn tab (lessons, tips, rhythm trainer).
 9. **Courses**: the Learn tab grew Beginners and Advanced course tabs, five new advanced lessons (number row, punctuation, tricky words, flow, speed), a lock/progress panel for Advanced, admin access to every course, and extra lesson animations (progress bar, confetti, staggered cards, key-press feedback).
 10. **Themes**: eight colour themes, Sunset made the default, floating My runs button, lesson progress on My runs, AI shortcut buttons.
 11. **Documentation**: code comments throughout `index.html` and `supabase-setup.sql`, this README, and the dev-tools test bundle.
-12. **More games**: added **Word Scramble** and **Emoji Rush** with per-round timers, score/streak/lives, AI reports and leaderboard boards; reordered the games hub so **Balloons** and **Wordle** come first; extended the SQL mode check to the two new modes.
+12. **More games**: added **Word Scramble** and **Emoji Rush** with per-round timers, score/streak/lives and leaderboard boards; reordered the games hub so **Balloons** and **Wordle** come first; extended the SQL mode check to the two new modes.
 13. **Mobile & touch**: auto-detection of touch/mobile devices, a floating Type button that opens the native keyboard in every typing mode, "Use my keyboard" buttons for Wordle and lessons, mobile-friendly hidden inputs, and touch/layout tweaks.

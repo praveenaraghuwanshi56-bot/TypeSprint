@@ -532,13 +532,6 @@ body{touch-action:manipulation}
 .runs-fab:hover{border-color:var(--accent);transform:translateY(-2px)}
 .runs-fab[aria-current="page"]{border-color:var(--accent)}
 @media (max-width:640px){.runs-fab{left:.75rem;bottom:.75rem;padding:.65rem}.runs-fab span{display:none}}
-/* ---- AI assistant shortcuts and lesson progress on My runs ---- */
-.ai-row{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin-top:.9rem}
-.ai-links{display:flex;flex-wrap:wrap;gap:.4rem}
-.ai{display:inline-flex;align-items:center;gap:.45rem;padding:.3rem .7rem .3rem .3rem;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:600 .82rem var(--font-ui);text-decoration:none;transition:transform .15s,border-color .15s}
-.ai:hover{border-color:var(--c);transform:translateY(-2px)}
-.ai-ic{display:grid;place-items:center;min-width:1.7rem;height:1.7rem;padding:0 .3rem;border-radius:9px;background:var(--c);color:var(--cink);font:700 .72rem var(--font-ui)}
-.ai-note{min-height:1.2em;margin:.4rem 0 0}
 .prog-head{margin-bottom:.6rem}
 .prog-bar{height:.6rem;overflow:hidden;border-radius:99px;background:var(--line)}
 .prog-bar i{display:block;width:0;height:100%;border-radius:inherit;background:var(--ok);transition:width .6s ease}
@@ -689,11 +682,7 @@ body{touch-action:manipulation}
         <p id="up-msg" class="msg" role="status"></p>
       </div>
       <div class="panel"><h2>Your uploaded texts</h2><ul id="manage" class="manage"></ul></div>
-      <details class="panel">
-        <summary>Need texts? Copy a prompt for an AI</summary>
-        <textarea id="ai-prompt" class="paste" rows="12" readonly aria-label="AI prompt"></textarea>
-        <div class="actions"><button id="copy-prompt" class="btn">Copy prompt</button></div>
-      </details>
+
     </div>
     <div id="admin-tab-appfile" hidden>
       <div class="panel">
@@ -1013,17 +1002,15 @@ body{touch-action:manipulation}
     </div>
   </section>
 
-  <!-- My runs: learning progress, AI shortcuts, downloads, recent runs (all stored in this browser). -->
+  <!-- My runs: learning progress, downloads, recent runs (all stored in this browser). -->
   <section id="view-history" hidden>
     <h1 class="home-title">My runs</h1>
-    <p class="home-sub">Saved in this browser only. Download a report and give it to an AI coach for feedback.</p>
+    <p class="home-sub">Saved in this browser only. Download your reports below.</p>
     <div class="menu-row hist-tools">
-      <button id="h-progress" class="btn primary">⬇ Progress report for AI</button>
+      <button id="h-progress" class="btn primary">⬇ Progress report</button>
       <button id="h-all" class="btn">⬇ All runs (.json)</button>
       <button id="h-clear" class="btn">Clear history</button>
     </div>
-    <div class="ai-row"><span class="muted small">Copy the progress report &amp; open:</span><div class="ai-links" data-ai="progress"></div></div>
-    <p class="ai-note small muted" id="ai-note-progress" role="status"></p>
     <h2 class="sect">Learning progress</h2>
     <div class="panel">
       <div class="prog-head"><strong id="lp-count"></strong></div>
@@ -1041,7 +1028,7 @@ body{touch-action:manipulation}
 <!-- Mobile helper: opens the native keyboard for the current typing mode. -->
 <button id="mobile-kbd" class="mobile-kbd" aria-label="Open the keyboard" hidden>⌨ <span>Type</span></button>
 
-<!-- Results card shown after every test or game: rating, stats, report/log downloads, AI shortcuts. -->
+<!-- Results card shown after every test or game: rating, stats, report/log downloads. -->
 <dialog id="results" aria-labelledby="r-rating">
   <p class="r-mode" id="r-mode"></p>
   <h2 id="r-rating"></h2>
@@ -1050,12 +1037,8 @@ body{touch-action:manipulation}
   <p class="save-status" id="save-status" role="status"></p>
   <p class="r-tip" id="r-tip"></p>
   <div class="r-tools" role="group" aria-label="Export this run">
-    <button class="btn small" id="r-report">⬇ Report for AI</button>
     <button class="btn small" id="r-json">⬇ Raw log</button>
-    <button class="btn small" id="r-copy">Copy for AI</button>
   </div>
-  <div class="ai-row"><span class="muted small">Copy the report &amp; open:</span><div class="ai-links" data-ai="run"></div></div>
-  <p class="ai-note small muted" id="ai-note-run" role="status"></p>
   <div class="actions">
     <button id="r-again" class="btn primary" autofocus>Try again</button>
     <button id="r-close" class="btn">Close</button>
@@ -1091,7 +1074,7 @@ const WORD_THEMES = ["cozy", "garden", "kitchen", "weather", "forest", "tea", "a
      9  Reading nook          slide-in side panel
     10  Accounts              sign in/up, guest, one device per account, account menu (rename, icon, delete)
     11  Leaderboard           styled dropdown + ranking list
-    12  Run logs and reports  keystroke analysis, AI reports, My runs history, AI shortcuts
+    12  Run logs and reports  keystroke analysis, My runs history
     13  Learn                 courses (Beginners/Advanced), lessons (animated hands + keyboard), tips, rhythm trainer
     14  Results card          showResults() - every mode ends here
     15  Keyboard shortcuts    Tab then Enter restarts
@@ -2912,7 +2895,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
       : `<li class="muted">No scores yet. Be the first!</li>`;
   }
 
-  /* ---------- Run logs, AI reports and history ---------- */
+  /* ---------- Run logs and history ---------- */
   // Standard QWERTY touch-typing finger map, used by the reports and by the lessons
   // Standard QWERTY touch-typing finger assignment, used by reports and lessons.
   const FINGERS = [["L-pinky", "`1qaz"], ["L-ring", "2wsx"], ["L-middle", "3edc"], ["L-index", "45rtfgvb"], ["R-index", "67yuhjnm"], ["R-middle", "8ik,"], ["R-ring", "9ol."], ["R-pinky", "0p;/-=[]'"]];
@@ -2939,7 +2922,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     { id: "short", icon: "⏱️", title: "Practise in short sessions", text: "Ten focused minutes a day beats one long session at the weekend." },
     { id: "words", icon: "🔤", title: "Type words, not letters", text: "Once you know the keys, think in whole words and common chunks like the, ing and tion." },
     { id: "warm", icon: "🔥", title: "Warm up first", text: "Do a minute of easy text before a timed test. Your first attempt is rarely your best." },
-    { id: "review", icon: "📊", title: "Review your weak keys", text: "Download a report from My runs and ask an AI coach which keys and fingers to drill." }
+    { id: "review", icon: "📊", title: "Review your weak keys", text: "Download a report from My runs to see which keys and fingers to drill." }
   ];
 
   // Turns the keystroke log of a Classic/Timed run into coaching data: speed by 5 s window, rhythm,
@@ -2970,7 +2953,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     };
   }
 
-  // Builds a Markdown table (used by the AI reports).
+  // Builds a Markdown table.
   const T_ = (head, rows) => (rows.length ? `| ${head.join(" | ")} |\n|${head.map(() => "---").join("|")}|\n${rows.map((r) => `| ${r.map((c) => String(c).replace(/\|/g, "/")).join(" | ")} |`).join("\n")}` : "_none_");
   // 'a (3), b (2)' style summary of the most frequent items.
   const topCount = (xs) => { const m = {}; xs.forEach((x) => { m[x] = (m[x] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, n]) => `${k} (${n})`).join(", "); };
@@ -3122,32 +3105,7 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
     lastRun = run; HISTORY.unshift(run); saveHistory();
     $("#r-tip").textContent = "💡 " + tipText(run);
   }
-  // The 'Copy for AI' button.
-  const copyBtn = $("#r-copy");
-  $("#r-report").addEventListener("click", () => lastRun && download(`typesprint-${lastRun.mode}-${fileStamp(lastRun)}.md`, reportMD(lastRun), "text/markdown"));
   $("#r-json").addEventListener("click", () => lastRun && download(`typesprint-${lastRun.mode}-${fileStamp(lastRun)}.json`, rawJSON(lastRun), "application/json"));
-  copyBtn.addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(reportMD(lastRun)); copyBtn.textContent = "Copied"; } catch { copyBtn.textContent = "Copy blocked, use the download"; }
-    setTimeout(() => { copyBtn.textContent = "Copy for AI"; }, 2500);
-  });
-
-  /* ---------- Shortcuts to AI assistants: copy the report, then open the site in a new tab ---------- */
-  // AI assistant shortcuts (name, URL, badge text, colour). Add or remove entries here.
-  const AIS = [
-    { name: "Claude", url: "https://claude.ai/new", tag: "Cl", color: "#d97757" },
-    { name: "ChatGPT", url: "https://chatgpt.com/", tag: "GPT", color: "#10a37f" },
-    { name: "Copilot", url: "https://copilot.microsoft.com/", tag: "Co", color: "#7c5cf0" },
-    { name: "Perplexity", url: "https://www.perplexity.ai/", tag: "Px", color: "#1f8a99" }
-  ];
-  $$("[data-ai]").forEach((box) => {
-    box.innerHTML = AIS.map((a) => `<a class="ai" href="${a.url}" target="_blank" rel="noopener noreferrer" data-name="${a.name}" style="--c:${a.color};--cink:${inkOn(a.color)}" title="Copy the report and open ${a.name}" aria-label="Copy the report and open ${a.name} (opens in a new tab)"><span class="ai-ic">${a.tag}</span>${a.name}</a>`).join("");
-    box.addEventListener("click", async (e) => {      // the link opens the site by itself; this just puts the report on the clipboard first
-      const a = e.target.closest("a.ai"); if (!a) return;
-      const run = box.dataset.ai === "run", note = $(run ? "#ai-note-run" : "#ai-note-progress"), text = run ? (lastRun ? reportMD(lastRun) : "") : progressMD();
-      try { await navigator.clipboard.writeText(text); note.textContent = `Report copied. Paste it into the ${a.dataset.name} chat.`; }
-      catch { note.textContent = "Couldn't copy automatically. Use the download button, then attach the file in the chat."; }
-    });
-  });
 
   /* ---------- My runs ---------- */
   // Local date/time text for history rows.
@@ -3545,26 +3503,6 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   });
 
   /* ---------- Upload page (admin only) ---------- */
-  // Prompt text the admin can copy to have an AI write typing texts in the upload format.
-  const AI_PROMPT = `Write [COUNT] typing practice passages about [TOPIC] at [DIFFICULTY] level.
-
-Output ONLY the file content: no commentary, no markdown, no code fences.
-Use exactly this format for every passage:
-
-title: A short title (2 to 5 words)
-difficulty: easy
-category: one lowercase word, e.g. stories, science, nature
----
-The passage text as ONE paragraph on a single line.
-
-Separate passages with a line containing only three equals signs:
-===
-
-Rules:
-- Plain ASCII only: straight quotes, hyphens instead of dashes, no emoji, no accented letters, no lists.
-- difficulty must be easy, medium or hard.
-- easy: 35 to 60 words, short common words. medium: 60 to 100 words. hard: 90 to 140 words with varied punctuation.
-- Natural, pleasant prose. Every passage different in subject and rhythm.`;
   // Normalises uploaded text to plain typable ASCII.
   const cleanText = (s) => s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/[\u2013\u2014]/g, "-").replace(/\u2026/g, "...").replace(/\s+/g, " ").trim().replace(/[^\x20-\x7E]/g, "");
   // Parses the upload format (title/difficulty/category header, '---', text, '===' between texts).
@@ -3720,11 +3658,7 @@ Rules:
     if (!r.ok) return say("#up-msg", r.error, true);
     say("#up-msg", "Deleted."); await loadLibrary(); renderManage();
   });
-  $("#ai-prompt").value = AI_PROMPT;
-  $("#copy-prompt").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(AI_PROMPT); $("#copy-prompt").textContent = "Copied"; }
-    catch { $("#ai-prompt").select(); $("#copy-prompt").textContent = "Press Ctrl+C to copy"; }
-  });
+
 
   /* ---------- Mobile detection and keyboard helpers ---------- */
   // Blurs every hidden typing input, closing the native mobile keyboard when changing pages or opening results.
