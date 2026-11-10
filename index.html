@@ -3186,15 +3186,18 @@ function dropdown(root, groups, value, onPick) {     // a styled, keyboard-frien
   // Lesson progress in memory (loaded from Supabase on sign-in, falls back to localStorage).
   let lessonDb = null;      // null = not loaded yet; {} = loaded, empty
   // Load lesson progress from Supabase when the player signs in.
+  // Guard: don't overwrite lessonDb if recordLesson already populated it (race condition:
+  // recordLesson can run before this RPC resolves, saving to localStorage + Supabase;
+  // if this RPC then resolves with older/empty data, it would clobber the new lesson).
   async function loadLessonsFromDb() {
     if (!auth) return;
     const r = await rpc("get_lesson_progress", { tok: auth.token });
     if (r.ok && r.data && r.data.lessons) {
       const out = {};
       r.data.lessons.forEach((l) => { out[l.lesson_id] = { done: l.done, best: l.best, last: l.last, secs: l.secs, attempts: l.attempts, at: l.at }; });
-      lessonDb = out;
+      if (lessonDb === null) lessonDb = out;
     } else {
-      lessonDb = {};
+      if (lessonDb === null) lessonDb = {};
     }
   }
   const lessonDone = () => {
